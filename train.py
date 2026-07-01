@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import argparse
@@ -15,10 +16,32 @@ def train(cfg: dict):
     log_dir = os.path.join("results", run_name)
     os.makedirs(log_dir, exist_ok=True)
 
-    env = make_vec_env(cfg["env_id"], n_envs=cfg["n_envs"], seed=cfg["seed"])
-    eval_env = make_vec_env(cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100)
+    with open(os.path.join(log_dir, "config.json"), "w") as f:
+        json.dump(cfg, f, indent=2)
 
-    model = PPO(
+    env_kwargs = {}
+    if "difficulty" in cfg:
+        env_kwargs["difficulty"] = cfg["difficulty"]
+    for key in ("forward_reward_weight", "ctrl_cost_weight", "contact_cost_weight"):
+        if key in cfg:
+            env_kwargs[key] = cfg[key]
+
+    env = make_vec_env(cfg["env_id"], n_envs=cfg["n_envs"], seed=cfg["seed"], env_kwargs=env_kwargs or None)
+    eval_env = make_vec_env(cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100, env_kwargs=env_kwargs or None)
+
+    pretrained = cfg.get("pretrained_path")
+    if pretrained:
+        print(f"Fine-tuning from: {pretrained}")
+        model = PPO.load(
+            pretrained,
+            env=env,
+            learning_rate=cfg["learning_rate"],
+            clip_range=cfg["clip_range"],
+            ent_coef=cfg["ent_coef"],
+            tensorboard_log=os.path.join("results", "tb_logs"),
+        )
+    else:
+        model = PPO(
         policy=cfg["policy"],
         env=env,
         learning_rate=cfg["learning_rate"],
@@ -33,8 +56,8 @@ def train(cfg: dict):
         max_grad_norm=cfg["max_grad_norm"],
         tensorboard_log=os.path.join("results", "tb_logs"),
         seed=cfg["seed"],
-        verbose=1,
-    )
+            verbose=1,
+        )
 
     callbacks = []
 
@@ -75,17 +98,28 @@ def train(cfg: dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", choices=["ant", "terrain"], default="ant")
+    parser.add_argument("--config", choices=["ant", "terrain", "terrain_finetune", "terrain_boost"], default="ant")
     parser.add_argument("--timesteps", type=int, default=None)
+    parser.add_argument(
+        "--pretrained",
+        default=None,
+        help="Path to a .zip model to fine-tune (overrides config pretrained_path)",
+    )
     args = parser.parse_args()
 
     if args.config == "terrain":
         from configs.ppo_terrain import config
+    elif args.config == "terrain_finetune":
+        from configs.ppo_terrain_finetune import config
+    elif args.config == "terrain_boost":
+        from configs.ppo_terrain_boost import config
     else:
         from configs.ppo_ant import config
 
     cfg = config.copy()
     if args.timesteps:
         cfg["total_timesteps"] = args.timesteps
+    if args.pretrained:
+        cfg["pretrained_path"] = args.pretrained
 
     train(cfg)

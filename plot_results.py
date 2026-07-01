@@ -1,17 +1,13 @@
+import argparse
 import os
-import glob
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+from results_utils import find_latest_run, run_label
 
 
-def find_latest_run(results_dir="results"):
-    runs = sorted(glob.glob(os.path.join(results_dir, "ppo_ant_*")))
-    if not runs:
-        raise FileNotFoundError("No training runs found in results/")
-    return runs[-1]
-
-
-def plot(run_dir: str):
+def plot(run_dir: str, show: bool = True):
     npz_path = os.path.join(run_dir, "eval", "evaluations.npz")
     data = np.load(npz_path)
 
@@ -34,7 +30,7 @@ def plot(run_dir: str):
 
     ax.set_xlabel("Timesteps", fontsize=12)
     ax.set_ylabel("Episode reward", fontsize=12)
-    ax.set_title("PPO baseline — Ant-v5 (flat ground)", fontsize=14)
+    ax.set_title(run_label(run_dir), fontsize=14)
     ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
@@ -42,10 +38,26 @@ def plot(run_dir: str):
     out_path = os.path.join(run_dir, "reward_curve.png")
     fig.savefig(out_path, dpi=150)
     print(f"Saved: {out_path}")
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return {
+        "best_reward": float(mean_rewards.max()),
+        "final_reward": float(mean_rewards[-1]),
+        "timesteps": int(timesteps[-1]),
+    }
 
 
 if __name__ == "__main__":
-    run_dir = find_latest_run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", choices=["ant", "terrain"], default=None)
+    parser.add_argument("--run-dir", default=None)
+    parser.add_argument("--no-show", action="store_true")
+    args = parser.parse_args()
+
+    run_dir = args.run_dir or find_latest_run(config=args.config)
     print(f"Plotting run: {run_dir}")
-    plot(run_dir)
+    metrics = plot(run_dir, show=not args.no_show)
+    print(f"Best eval reward: {metrics['best_reward']:.0f}")

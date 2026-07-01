@@ -1,0 +1,4 @@
+# Committed training artifacts (plots, demos) for portfolio display.
+# Generated via: python plot_results.py --config <ant|terrain> --no-show
+#                python evaluate.py --config <ant|terrain>
+#                python collect_artifacts.py --config <ant|terrain>
