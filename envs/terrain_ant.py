@@ -12,8 +12,16 @@ HFIELD_X_HALF = 8.0
 HFIELD_Y_HALF = 8.0
 Z_TOP = 3.0
 Z_BASE = 0.1
-SPAWN_CLEARANCE = 0.55
+SPAWN_CLEARANCE = 0.65
 MIN_GROUND_GAP = 0.02  # only correct actual penetrations reported by MuJoCo contacts
+BOUNDARY_MARGIN = 0.75  # terminate before walking off the heightfield edge
+FOOTPRINT_SAMPLES = (
+    (0.0, 0.0),
+    (0.25, 0.25),
+    (-0.25, 0.25),
+    (0.25, -0.25),
+    (-0.25, -0.25),
+)
 
 
 def _bilinear_sample(grid: np.ndarray, x: float, y: float) -> float:
@@ -77,6 +85,18 @@ class TerrainAntEnv(AntEnv):
         data = _bilinear_sample(self._terrain_grid, x, y)
         return terrain_height_from_data(data)
 
+    def _local_terrain_z(self, x: float, y: float) -> float:
+        """Max terrain height under the ant footprint at (x, y)."""
+        heights = [
+            self.sample_terrain_z(x + dx, y + dy) for dx, dy in FOOTPRINT_SAMPLES
+        ]
+        return max(heights)
+
+    def _outside_terrain_bounds(self) -> bool:
+        x, y = float(self.data.qpos[0]), float(self.data.qpos[1])
+        limit = HFIELD_X_HALF - BOUNDARY_MARGIN
+        return abs(x) > limit or abs(y) > limit
+
     def reset(self, **kwargs):
         return super().reset(**kwargs)
 
@@ -94,10 +114,11 @@ class TerrainAntEnv(AntEnv):
             + self._reset_noise_scale * self.np_random.standard_normal(self.model.nv)
         )
 
-        terrain_z = self.sample_terrain_z(float(qpos[0]), float(qpos[1]))
+        terrain_z = self._local_terrain_z(float(qpos[0]), float(qpos[1]))
         qpos[2] = terrain_z + SPAWN_CLEARANCE
 
         self.set_state(qpos, qvel)
+        self._enforce_ground_clearance()
         return self._get_obs()
 
     def _enforce_ground_clearance(self):
@@ -127,6 +148,8 @@ class TerrainAntEnv(AntEnv):
         observation = self._get_obs()
         reward, reward_info = self._get_rew(x_velocity, action)
         terminated = (not self.is_healthy) and self._terminate_when_unhealthy
+        if self._outside_terrain_bounds():
+            terminated = True
         info = {
             "x_position": self.data.qpos[0],
             "y_position": self.data.qpos[1],

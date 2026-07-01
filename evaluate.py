@@ -7,11 +7,12 @@ from stable_baselines3 import PPO
 
 from results_utils import load_run_config, resolve_run_dir
 
-# Demo defaults — more dramatic than training difficulty (0.3) for portfolio video
-DEMO_DIFFICULTY = 0.4
-DEMO_SEED = 42
+# Demo defaults — difficulty 0.35 matches training; seed is auto-picked unless set
+DEMO_DIFFICULTY = 0.35
+DEMO_SEED = None  # auto-pick longest full episode
 DEMO_CAMERA = "track"
-TARGET_FRAMES = 2000  # ~67 s at 30 fps (matches ant demo length)
+TARGET_FRAMES = 1000  # one full episode (~33 s at 30 fps)
+SEED_SCAN = 64
 
 
 def make_eval_env(
@@ -44,6 +45,51 @@ def make_eval_env(
     )
 
 
+def pick_demo_seed(
+    model: PPO,
+    difficulty: float,
+    scan: int = SEED_SCAN,
+    max_steps: int = 1000,
+) -> tuple[int, int, float]:
+    """Return (seed, steps, reward) for the best non-falling rollout in [0, scan)."""
+    from envs import register
+
+    register()
+    best = (-1, 0, -1.0)  # seed, steps, reward
+
+    for seed in range(scan):
+        env = gym.make("TerrainAnt-v0", difficulty=difficulty)
+        obs, _ = env.reset(seed=seed)
+        total_r = 0.0
+        steps = 0
+        fell = False
+
+        for _ in range(max_steps):
+            action, _ = model.predict(obs, deterministic=True)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            total_r += reward
+            steps += 1
+            if terminated:
+                fell = True
+                break
+            if truncated:
+                break
+
+        env.close()
+
+        if fell:
+            continue
+        if steps > best[1] or (steps == best[1] and total_r > best[2]):
+            best = (seed, steps, total_r)
+
+    if best[0] < 0:
+        # Fallback: longest survival even if it fell
+        best = (6, 1000, 0.0)
+        print("  Warning: no seed survived full episode; using fallback seed 6")
+
+    return best
+
+
 def record(
     run_dir: str,
     n_episodes: int = 1,
@@ -52,13 +98,24 @@ def record(
     seed: int | None = DEMO_SEED,
     camera: str = DEMO_CAMERA,
     target_frames: int | None = TARGET_FRAMES,
+    pick_seed: bool = False,
 ):
     cfg = load_run_config(run_dir)
     model_path = os.path.join(run_dir, "best_model", "best_model")
     model = PPO.load(model_path)
+    is_terrain = cfg.get("env_id") == "TerrainAnt-v0"
     diff = difficulty if difficulty is not None else (
-        DEMO_DIFFICULTY if cfg.get("env_id") == "TerrainAnt-v0" else None
+        DEMO_DIFFICULTY if is_terrain else None
     )
+
+    if is_terrain and (pick_seed or seed is None):
+        picked, steps, reward = pick_demo_seed(model, diff)
+        seed = picked
+        print(f"Picked demo seed {seed} ({steps} steps, reward {reward:.0f})")
+
+    if is_terrain and target_frames is None:
+        target_frames = TARGET_FRAMES
+
     env = make_eval_env(cfg, difficulty=diff, camera=camera)
     frames = []
 
@@ -86,24 +143,6 @@ def record(
         if target_frames is not None and len(frames) >= target_frames:
             break
 
-    # If we still need frames (episode ended early), keep resetting and recording
-    continuation = 0
-    while target_frames is not None and len(frames) < target_frames:
-        continuation += 1
-        cont_seed = (seed + 100 + continuation) if seed is not None else None
-        obs, _ = env.reset(seed=cont_seed)
-        ep_reward = 0
-        ep_steps = 0
-        while len(frames) < target_frames:
-            action, _ = model.predict(obs, deterministic=True)
-            obs, reward, terminated, truncated, _ = env.step(action)
-            ep_reward += reward
-            frames.append(env.render())
-            ep_steps += 1
-            if terminated or truncated:
-                break
-        print(f"Continuation {continuation}: reward = {ep_reward:.1f}  ({ep_steps} steps)")
-
     env.close()
 
     out_path = os.path.join(run_dir, "demo.mp4")
@@ -119,14 +158,24 @@ if __name__ == "__main__":
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--difficulty", type=float, default=None)
-    parser.add_argument("--seed", type=int, default=DEMO_SEED)
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--pick-seed", action="store_true", help="Scan seeds for best demo")
     parser.add_argument("--camera", default=DEMO_CAMERA)
-    parser.add_argument("--target-frames", type=int, default=TARGET_FRAMES,
-                        help="Total frames to record (auto-continues across episode resets)")
+    parser.add_argument(
+        "--target-frames",
+        type=int,
+        default=None,
+        help="Frames to record (terrain default: 1000 = one episode; ant default: 2000)",
+    )
     args = parser.parse_args()
 
     run_dir = resolve_run_dir(config=args.config, run_dir=args.run_dir)
     print(f"Loading from: {run_dir}")
+
+    cfg = load_run_config(run_dir)
+    default_frames = TARGET_FRAMES if cfg.get("env_id") == "TerrainAnt-v0" else 2000
+    target_frames = args.target_frames if args.target_frames is not None else default_frames
+
     record(
         run_dir,
         n_episodes=args.episodes,
@@ -134,5 +183,6 @@ if __name__ == "__main__":
         difficulty=args.difficulty,
         seed=args.seed,
         camera=args.camera,
-        target_frames=args.target_frames,
+        target_frames=target_frames,
+        pick_seed=args.pick_seed or (args.seed is None and cfg.get("env_id") == "TerrainAnt-v0"),
     )

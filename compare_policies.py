@@ -20,6 +20,7 @@ from results_utils import default_checkpoint
 
 DEFAULT_FLAT_RUN = default_checkpoint("flat") or "checkpoints/flat"
 DEFAULT_TERRAIN_RUN = default_checkpoint("terrain") or "checkpoints/terrain"
+DEFAULT_VIDEO_SEED = 6  # strong terrain rollout at difficulty 0.4
 
 
 @dataclass
@@ -293,7 +294,7 @@ if __name__ == "__main__":
     parser.add_argument("--seeds", type=int, nargs="+", default=list(range(10)))
     parser.add_argument("--max-steps", type=int, default=1000)
     parser.add_argument("--out-dir", default="docs/assets/terrain")
-    parser.add_argument("--video-seed", type=int, default=42)
+    parser.add_argument("--video-seed", type=int, default=DEFAULT_VIDEO_SEED)
     parser.add_argument("--no-video", action="store_true")
     args = parser.parse_args()
 
