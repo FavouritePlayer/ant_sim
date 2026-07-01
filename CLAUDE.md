@@ -22,9 +22,9 @@ python train.py --config ant
 python train.py --config terrain
 ```
 
-**Fine-tune terrain agent (recommended — boost from stable checkpoint, 3M steps):**
+**Fine-tune terrain agent (speed — current checkpoint recipe, 2M steps):**
 ```bash
-python train.py --config terrain_boost
+python train.py --config terrain_speed
 ```
 
 **Compare flat-trained vs terrain-adapted on matched terrain (control experiment):**
@@ -90,7 +90,7 @@ Scripts prefer committed checkpoints over gitignored `results/`:
 | Policy | Path | Best eval |
 |---|---|---:|
 | Flat baseline | `checkpoints/flat/` | 2421 |
-| Terrain (boost fine-tune) | `checkpoints/terrain/` | 1013 @ diff 0.35 |
+| Terrain (speed fine-tune) | `checkpoints/terrain/` | 1152 @ diff 0.38 |
 
 Comparison artifacts (10 seeds @ diff 0.4): `docs/assets/terrain/comparison_*`
 

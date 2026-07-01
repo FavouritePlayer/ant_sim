@@ -150,16 +150,19 @@ This is the resume-grade result — implemented in `compare_policies.py`.
 | **Held constant** | Difficulty 0.4, matched seeds, 1000 max steps, deterministic actions |
 | **Metrics** | Episode reward, steps survived, fall rate, forward distance |
 
-**Results (10 seeds):**
+**Results (10 seeds, difficulty 0.4, reproducible terrain seeding):**
 
-| Metric | Flat-trained | Terrain-adapted |
+| Metric | Flat-trained | Terrain-adapted (speed) |
 |---|---:|---:|
-| Mean reward | 467 ± 168 | 930 ± 59 |
-| Mean steps | 511 | 996 |
-| Fall rate | 70% | 10% |
-| Mean forward distance | 6.1 m | 1.6 m |
+| Mean reward | 500 ± 126 | 848 ± 130 |
+| Mean steps | 560 | 887 |
+| Fall rate | 100% | 30% |
+| Mean forward distance | 8.9 m | 2.6 m |
+| Mean forward velocity | 0.41 m/s | 0.08 m/s |
 
-**Interpretation:** The flat policy often moves quickly but falls on uneven ground. The terrain policy prioritizes **stability** — it survives and earns ~2× return, but travels less far per episode. That tradeoff is worth stating in interviews.
+**Interpretation:** The flat policy always falls but often covers more ground in x before doing so. The speed fine-tune (`configs/ppo_terrain_speed.py`, `forward_reward_weight=2.5`) roughly **tripled** mean forward distance vs. the prior boost checkpoint (0.9 m → 2.6 m) at the cost of higher fall rate (10% → 30%). Still far better than flat (100% fall).
+
+**Bug fixed:** terrain was generated before Gymnasium applied the episode seed, making comparisons non-reproducible. `_randomise_terrain()` now runs inside `reset_model()` after the RNG is seeded.
 
 ```bash
 python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
@@ -170,7 +173,8 @@ python collect_artifacts.py --all   # refresh docs/assets/ including comparison
 
 1. **Curriculum ramp** — catastrophic forgetting when difficulty increased too fast.
 2. **Fine-tune flat → terrain** — fast initial motion but unstable (~150–220 steps before falling).
-3. **Boost fine-tune** from stable terrain checkpoint + `forward_reward_weight=1.5` — final treatment policy.
+3. **Boost fine-tune** from stable terrain checkpoint + `forward_reward_weight=1.5` — stable but cautious locomotion.
+4. **Speed fine-tune** (`terrain_speed`, `forward_reward_weight=2.5`) — current checkpoint; 2.6 m mean forward distance, 30% fall rate.
 
 ## 11. Reading training output
 

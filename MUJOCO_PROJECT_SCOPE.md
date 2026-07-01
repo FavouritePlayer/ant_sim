@@ -11,13 +11,13 @@ Legend: **[DONE]** / **[PARTIAL]** / **[NOT DONE]** / **[DEVIATION]**
 | Phase 1 — baseline (flat Ant, PPO, render pipeline) | **[DONE]**, target reward short by ~20% |
 | Env version | **[DEVIATION]** — spec says Ant-v4, implementation uses Ant-v5 |
 | Phase 2 — contribution chosen | **[DEVIATION]** — terrain adaptation, not leg-damage (both are sanctioned by this doc's "Alternative contributions" section; no straddling occurred, so this is fine) |
-| Phase 2 — terrain policy trained | **[DONE]** — boost fine-tune, best eval 1013 at difficulty 0.35 |
+| Phase 2 — terrain policy trained | **[DONE]** — speed fine-tune, best eval 1152 @ difficulty 0.38 |
 | Phase 2 — quantified comparison vs. flat-trained baseline on terrain | **[DONE]** — `compare_policies.py`, 10 seeds @ difficulty 0.4 |
 | Phase 3 — public repo, README, LEARNING.md | **[DONE]** |
 | Phase 3 — comparison video (baseline vs. robust, same conditions) | **[DONE]** — `docs/assets/terrain/comparison_demo.mp4` |
 | Phase 3 — one results plot, both policies | **[DONE]** — `docs/assets/terrain/comparison_plot.png` |
 
-Bottom line: **resume-grade bar met.** Flat-trained control vs. terrain-adapted treatment evaluated on matched TerrainAnt-v0 episodes. Terrain policy: **930 ± 59** reward, **10%** fall rate. Flat baseline: **467 ± 168** reward, **70%** fall rate. Comparison artifacts, README experimental design, and resume bullet are in place.
+Bottom line: **resume-grade bar met.** Flat-trained control vs. terrain-adapted treatment on matched TerrainAnt-v0 episodes (reproducible seeding). Terrain policy: **848 ± 130** reward, **30%** fall rate, **2.6 m** forward distance. Flat baseline: **500 ± 126** reward, **100%** fall rate.
 
 ## One-line pitch (the target end state)
 
@@ -61,10 +61,10 @@ The rest of this doc originally assumed the **leg-damage robustness** scope; the
 
 | Metric | Flat-trained (control) | Terrain-adapted (treatment) |
 |---|---:|---:|
-| Mean episode reward | 467 ± 168 | 930 ± 59 |
-| Mean episode length | 511 steps | 996 steps |
-| Fall rate | 70% | 10% |
-| Mean forward distance | 6.1 m | 1.6 m |
+| Mean episode reward | 500 ± 126 | 848 ± 130 |
+| Mean episode length | 560 steps | 887 steps |
+| Fall rate | 100% | 30% |
+| Mean forward distance | 8.9 m | 2.6 m |
 
 **Phase 3 — Make it legible (Week 4–5):** **[DONE]**
 - Public GitHub repo, clean README (problem, approach, reward design, what failed, result). — **[DONE]** — github.com/FavouritePlayer/ant_sim, README + LEARNING.md both present and substantive.
@@ -92,7 +92,7 @@ Boilerplate (fine to delegate to Claude Code): training-loop scaffolding, Tensor
 
 ## The resume bullet this produces
 
-> *Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **930 ± 59** episode reward vs **467 ± 168** for a flat-trained baseline, with **10% vs 70%** fall rate under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)*
+> *Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **848 ± 130** episode reward vs **500 ± 126** for a flat-trained baseline, with **30% vs 100%** fall rate and **2.6 m** mean forward distance under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)*
 
 *(Original illustrative leg-damage bullet replaced with actual terrain-adaptation numbers.)*
 

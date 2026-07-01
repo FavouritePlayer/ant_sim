@@ -98,7 +98,7 @@ def train(cfg: dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", choices=["ant", "terrain", "terrain_finetune", "terrain_boost"], default="ant")
+    parser.add_argument("--config", choices=["ant", "terrain", "terrain_finetune", "terrain_boost", "terrain_speed", "terrain_speed_refine"], default="ant")
     parser.add_argument("--timesteps", type=int, default=None)
     parser.add_argument(
         "--pretrained",
@@ -113,6 +113,10 @@ if __name__ == "__main__":
         from configs.ppo_terrain_finetune import config
     elif args.config == "terrain_boost":
         from configs.ppo_terrain_boost import config
+    elif args.config == "terrain_speed":
+        from configs.ppo_terrain_speed import config
+    elif args.config == "terrain_speed_refine":
+        from configs.ppo_terrain_speed_refine import config
     else:
         from configs.ppo_ant import config
 

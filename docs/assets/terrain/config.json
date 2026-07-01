@@ -1,20 +1,21 @@
 {
   "env_id": "TerrainAnt-v0",
   "n_envs": 4,
-  "total_timesteps": 3000000,
+  "total_timesteps": 2000000,
   "policy": "MlpPolicy",
-  "learning_rate": 5e-05,
+  "learning_rate": 4e-05,
   "n_steps": 2048,
   "batch_size": 256,
   "n_epochs": 10,
   "gamma": 0.99,
   "gae_lambda": 0.95,
-  "clip_range": 0.12,
-  "ent_coef": 0.002,
+  "clip_range": 0.1,
+  "ent_coef": 0.004,
   "vf_coef": 0.5,
   "max_grad_norm": 0.5,
   "seed": 42,
-  "difficulty": 0.35,
-  "forward_reward_weight": 1.5,
-  "pretrained_path": "results/ppo_terrainant_v0_1782847297/best_model/best_model"
+  "difficulty": 0.38,
+  "forward_reward_weight": 2.5,
+  "ctrl_cost_weight": 0.4,
+  "pretrained_path": "results/ppo_terrainant_v0_1782867891/best_model/best_model"
 }

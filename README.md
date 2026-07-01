@@ -22,12 +22,13 @@ Both policies evaluated on **TerrainAnt-v0** at **difficulty 0.4**, **10 matched
 
 | Metric | Flat-trained (control) | Terrain-adapted | 
 |---|---:|---:|
-| Mean episode reward | 467 ± 168 | **930 ± 59** |
-| Mean episode length | 511 steps | **996 steps** |
-| Fall rate | **70%** | **10%** |
-| Mean forward distance | 6.1 m | 1.6 m |
+| Mean episode reward | 500 ± 126 | **848 ± 130** |
+| Mean episode length | 560 steps | **887 steps** |
+| Fall rate | **100%** | **30%** |
+| Mean forward distance | 8.9 m (before falling) | **2.6 m** |
+| Mean forward velocity | 0.41 m/s | **0.08 m/s** |
 
-**Takeaway:** The flat-trained policy collapses on unseen terrain (falls 7/10 episodes). The terrain-adapted policy survives and accumulates roughly **2× the return** under matched conditions. The flat policy often travels farther before falling; the terrain policy trades peak speed for stability.
+**Takeaway:** The flat-trained policy falls on every evaluated seed. The terrain-adapted policy survives 7/10 episodes and moves **~2.8× farther** than the prior terrain checkpoint (0.9 m → 2.6 m mean forward distance) after a speed-focused fine-tune (`terrain_speed`). It trades some stability (30% fall rate vs. 10% before) for clearly stronger locomotion on hills.
 
 Run the comparison yourself:
 
@@ -40,7 +41,7 @@ python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
 | Policy | Training | Best eval reward | Notes |
 |---|---|---:|---|
 | Ant-v5 (flat) | 2M steps | **2421** | Phase 1 baseline |
-| TerrainAnt-v0 | 3M boost fine-tune | **1013** | Transfer from stable terrain checkpoint |
+| TerrainAnt-v0 | 2M speed fine-tune | **1152** | `forward_reward_weight=2.5` |
 
 ## Quick start
 
@@ -51,7 +52,8 @@ pip install -r requirements.txt
 
 python check_env.py
 python train.py --config ant
-python train.py --config terrain_boost   # fine-tune stable terrain agent
+python train.py --config terrain_boost   # stable terrain agent
+python train.py --config terrain_speed   # speed fine-tune (current checkpoint)
 python compare_policies.py               # control vs treatment (uses checkpoints/)
 python evaluate.py --config terrain
 python collect_artifacts.py --all        # refresh docs/assets/ + comparison
@@ -91,7 +93,8 @@ TensorBoard: `tensorboard --logdir results/tb_logs`
 
 - **Curriculum learning** caused catastrophic forgetting when difficulty ramped too fast.
 - **Fine-tune from flat** alone produced fast but unstable locomotion on terrain (fell ~150 steps).
-- **Boost fine-tune** from the stable terrain checkpoint + higher forward reward produced the final treatment policy.
+- **Boost fine-tune** from the stable terrain checkpoint + higher forward reward produced a stable baseline.
+- **Speed fine-tune** (`terrain_speed`, `forward_reward_weight=2.5`) improved mean forward distance from **0.9 m → 2.6 m** on matched eval seeds (reproducible terrain seeding fix in `TerrainAntEnv.reset_model`).
 
 ## Project structure
 
@@ -109,7 +112,7 @@ docs/assets/           # Committed plots, comparison results, demo videos
 
 ## Resume bullet
 
-> Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **930 ± 59** episode reward vs **467 ± 168** for a flat-trained baseline, with **10% vs 70%** fall rate under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
+> Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **848 ± 130** episode reward vs **500 ± 126** for a flat-trained baseline, with **30% vs 100%** fall rate and **2.6 m** mean forward distance under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
 
 ## Further reading
 

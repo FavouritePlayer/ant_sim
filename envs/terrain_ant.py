@@ -78,10 +78,11 @@ class TerrainAntEnv(AntEnv):
         return terrain_height_from_data(data)
 
     def reset(self, **kwargs):
-        self._randomise_terrain()
         return super().reset(**kwargs)
 
     def reset_model(self):
+        self._randomise_terrain()
+
         noise_low = -self._reset_noise_scale
         noise_high = self._reset_noise_scale
 
