@@ -24,7 +24,20 @@ Unlike supervised learning (labeled examples), the agent only gets a scalar **re
 
 Each episode runs up to 1000 steps. The ant "dies" if it flips over (torso too low/high).
 
-## 3. PPO — Proximal Policy Optimization
+## 3. Project scope: terrain adaptation, not leg damage
+
+The original project brief (`MUJOCO_PROJECT_SCOPE.md`) described two possible contributions:
+
+| Option | Idea | Status in this repo |
+|---|---|---|
+| **Leg-damage robustness** | Randomly disable leg actuators during training; compare damaged baseline vs. robust policy | **Not implemented** — would need a failure-injection wrapper that zeros torques on selected joints and retraining under that distribution |
+| **Terrain adaptation** | Train on randomized heightfield terrain; compare flat-trained vs. terrain-adapted policy on unseen rough ground | **Implemented** — this is the actual contribution |
+
+We picked **one** contribution (terrain) and did not straddle. The resume bullet and comparison experiment are about **generalization to rough terrain**, not walking with missing limbs.
+
+If you wanted leg-damage next, the env change would look roughly like: at each reset, sample k ∈ {0,1,2} leg indices and multiply those action dimensions by 0 before `step()`. The flat-trained baseline would collapse under damage; a policy trained with randomized damage would be the treatment. That code path does not exist in this repository.
+
+## 4. PPO — Proximal Policy Optimization
 
 PPO is an **on-policy** actor-critic algorithm. It maintains:
 
@@ -57,7 +70,7 @@ model.learn(total_timesteps=2_000_000, callback=eval_callback)
 
 `MlpPolicy` = two hidden-layer MLPs (64 units each by default) for actor and critic.
 
-## 4. Parallel environments
+## 5. Parallel environments
 
 ```python
 env = make_vec_env("Ant-v5", n_envs=4, seed=42)
@@ -65,15 +78,15 @@ env = make_vec_env("Ant-v5", n_envs=4, seed=42)
 
 `make_vec_env` runs 4 independent Ant instances in parallel (vectorized). This collects experience 4× faster — critical because RL is sample-inefficient.
 
-## 5. Evaluation and checkpointing
+## 6. Evaluation and checkpointing
 
 ```python
 EvalCallback(eval_env, best_model_save_path=..., eval_freq=12500, n_eval_episodes=5)
 ```
 
-Every 12,500 training steps, the agent runs 5 deterministic episodes in a held-out env. If mean reward beats the previous best, the model is saved to `best_model/`. This is what `evaluate.py` loads for demo videos.
+Every 12,500 training steps, the agent runs 5 deterministic episodes in a held-out env. If mean reward beats the previous best, the model is saved to `best_model/`. Committed copies for reproducibility live in `checkpoints/flat/` and `checkpoints/terrain/` (~300 KB each). Scripts default to those paths so a fresh clone can run demos without retraining.
 
-## 6. Custom terrain — TerrainAnt-v0
+## 7. Custom terrain — TerrainAnt-v0
 
 ### Why subclass AntEnv?
 
@@ -81,36 +94,43 @@ Gymnasium's `AntEnv` already handles observations, rewards, and termination. We 
 
 ### Procedural terrain generation
 
+Each episode builds a **256×256** heightfield over a **16×16 m** footprint:
+
 ```python
-# Sum of 8 random 2D sinusoids
-terrain += sin(fx * X + px) * cos(fy * Y + py)
+# Sum of 6 random 2D sinusoids, then sharpen peaks/troughs
+terrain += amp * sin(fx * X + px) * cos(fy * Y + py)
+centered = sign(centered) * (abs(centered * 2) ** 0.75) * 0.5
+terrain = 0.5 + (terrain - 0.5) * difficulty   # difficulty in [0, 1]
 ```
 
-Each episode gets a unique landscape. `difficulty` scales amplitude: 0.3 means bumps up to ~18 cm.
+At `difficulty=1`, elevation spans roughly **0.1–3.0 m** above the MuJoCo base plane. At `difficulty=0.4` (comparison/eval setting), relief is scaled to 40% of that range — visible hills and valleys, not flat ground.
 
 ### Spawn safety
 
+The height at the spawn cell is normalized so the center is mid-range, then:
+
 ```python
-terrain -= terrain[cx, cy]  # zero height at center
+qpos[2] = terrain_z + SPAWN_CLEARANCE  # 0.55 m above local ground
 ```
 
-Without this, the ant could spawn inside a hill.
+A contact-based nudge in `step()` corrects rare floor penetrations reported by MuJoCo.
 
 ### Writing to MuJoCo
 
 ```python
-self.model.hfield_data[:] = (terrain * self.difficulty).flatten()
+self.model.hfield_data[adr : adr + NROW * NCOL] = terrain.flatten()
+mujoco.mj_forward(self.model, self.data)
 ```
 
-MuJoCo reads `hfield_data` each physics step. We overwrite it on every `reset()`.
+We write `hfield_data` on every `reset()`. Do **not** call `spec.recompile()` after writing — that was a bug that zeroed collision geometry while visual hills remained.
 
-## 7. Curriculum learning (and why we disabled it)
+## 8. Curriculum learning (and why we disabled it)
 
 **Idea**: start on flat ground, gradually increase terrain difficulty so the agent learns incrementally.
 
 **What happened**: the policy learned to walk on easy terrain, but when difficulty ramped up, performance collapsed — the policy forgot earlier skills faster than it acquired new ones (**catastrophic forgetting**).
 
-**Fix**: train at fixed `difficulty=0.3` so the reward landscape stays stable.
+**Fix**: train at fixed difficulty (~0.35) so the reward landscape stays stable. The winning terrain agent came from a **boost fine-tune** of an earlier stable checkpoint with higher `forward_reward_weight`.
 
 The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to experiment:
 
@@ -119,7 +139,40 @@ The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to ex
 "curriculum": {"start": 0.05, "max": 0.8, "interval": 100_000},
 ```
 
-## 8. Reading training output
+## 9. Control vs. treatment experiment
+
+This is the resume-grade result — implemented in `compare_policies.py`.
+
+| | Control | Treatment |
+|---|---|---|
+| **Policy** | Flat-trained Ant-v5 (`checkpoints/flat/`) | Terrain-adapted (`checkpoints/terrain/`) |
+| **Test env** | TerrainAnt-v0 | TerrainAnt-v0 |
+| **Held constant** | Difficulty 0.4, matched seeds, 1000 max steps, deterministic actions |
+| **Metrics** | Episode reward, steps survived, fall rate, forward distance |
+
+**Results (10 seeds):**
+
+| Metric | Flat-trained | Terrain-adapted |
+|---|---:|---:|
+| Mean reward | 467 ± 168 | 930 ± 59 |
+| Mean steps | 511 | 996 |
+| Fall rate | 70% | 10% |
+| Mean forward distance | 6.1 m | 1.6 m |
+
+**Interpretation:** The flat policy often moves quickly but falls on uneven ground. The terrain policy prioritizes **stability** — it survives and earns ~2× return, but travels less far per episode. That tradeoff is worth stating in interviews.
+
+```bash
+python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
+python collect_artifacts.py --all   # refresh docs/assets/ including comparison
+```
+
+## 10. What we tried (and what failed)
+
+1. **Curriculum ramp** — catastrophic forgetting when difficulty increased too fast.
+2. **Fine-tune flat → terrain** — fast initial motion but unstable (~150–220 steps before falling).
+3. **Boost fine-tune** from stable terrain checkpoint + `forward_reward_weight=1.5` — final treatment policy.
+
+## 11. Reading training output
 
 ```
 | rollout/           |          |
@@ -133,14 +186,7 @@ The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to ex
 Early training: negative rewards, short episodes (ant falls immediately).
 Late training: positive rewards, episodes near 1000 steps (ant runs far).
 
-## 9. Suggested experiments
-
-1. **Transfer learning**: train on flat (`ant`), then fine-tune on terrain with `--timesteps 500000`.
-2. **Difficulty ablation**: try `difficulty` = 0.0, 0.3, 0.6, 1.0 and compare eval rewards.
-3. **Re-enable curriculum** with slower ramp (`interval=500_000`) and compare to fixed difficulty.
-4. **Entropy bonus**: set `ent_coef=0.01` in terrain config to encourage exploration.
-
-## 10. Glossary
+## 12. Glossary
 
 | Term | Definition |
 |---|---|

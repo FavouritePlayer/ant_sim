@@ -5,7 +5,7 @@ import gymnasium as gym
 import imageio
 from stable_baselines3 import PPO
 
-from results_utils import find_latest_run, load_run_config
+from results_utils import load_run_config, resolve_run_dir
 
 # Demo defaults — more dramatic than training difficulty (0.3) for portfolio video
 DEMO_DIFFICULTY = 0.4
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                         help="Total frames to record (auto-continues across episode resets)")
     args = parser.parse_args()
 
-    run_dir = args.run_dir or find_latest_run(config=args.config)
+    run_dir = resolve_run_dir(config=args.config, run_dir=args.run_dir)
     print(f"Loading from: {run_dir}")
     record(
         run_dir,

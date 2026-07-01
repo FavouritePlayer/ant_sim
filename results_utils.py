@@ -2,6 +2,16 @@ import glob
 import json
 import os
 
+CHECKPOINT_DIRS = {
+    "ant": "checkpoints/flat",
+    "flat": "checkpoints/flat",
+    "terrain": "checkpoints/terrain",
+}
+
+
+def _has_checkpoint(run_dir: str) -> bool:
+    return os.path.isfile(os.path.join(run_dir, "best_model", "best_model.zip"))
+
 
 def find_latest_run(results_dir: str = "results", config: str | None = None) -> str:
     """Return the most recent training run directory.
@@ -22,15 +32,43 @@ def find_latest_run(results_dir: str = "results", config: str | None = None) -> 
     return runs[-1]
 
 
+def default_checkpoint(config: str | None) -> str | None:
+    if not config:
+        return None
+    path = CHECKPOINT_DIRS.get(config)
+    if path and _has_checkpoint(path):
+        return path
+    return None
+
+
+def resolve_run_dir(config: str | None = None, run_dir: str | None = None) -> str:
+    """Prefer explicit run_dir, then committed checkpoints, then latest results/."""
+    if run_dir:
+        if not _has_checkpoint(run_dir):
+            raise FileNotFoundError(
+                f"No checkpoint at {run_dir}/best_model/best_model.zip"
+            )
+        return run_dir
+
+    checkpoint = default_checkpoint(config)
+    if checkpoint:
+        return checkpoint
+
+    if config:
+        return find_latest_run(config=config)
+
+    raise ValueError("Provide --run-dir or --config to locate a checkpoint")
+
+
 def load_run_config(run_dir: str) -> dict:
     config_path = os.path.join(run_dir, "config.json")
     if os.path.isfile(config_path):
         with open(config_path) as f:
             return json.load(f)
     # Infer from directory name for older runs
-    name = os.path.basename(run_dir)
-    if "terrainant" in name:
-        return {"env_id": "TerrainAnt-v0", "difficulty": 0.3}
+    name = os.path.basename(run_dir.rstrip("/"))
+    if name in ("flat", "terrain") or "terrain" in name or "terrainant" in name:
+        return {"env_id": "TerrainAnt-v0", "difficulty": 0.35}
     return {"env_id": "Ant-v5"}
 
 
