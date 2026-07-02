@@ -12,3 +12,8 @@ def register():
         entry_point="envs.terrain_ant:VelocityTerrainAntEnv",
         max_episode_steps=1000,
     )
+    gym.register(
+        id="DamageAnt-v0",
+        entry_point="envs.damage_ant:DamageAntEnv",
+        max_episode_steps=1000,
+    )

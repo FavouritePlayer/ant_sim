@@ -6,6 +6,7 @@ CHECKPOINT_DIRS = {
     "ant": "checkpoints/flat",
     "flat": "checkpoints/flat",
     "terrain": "checkpoints/terrain",
+    "damage": "checkpoints/damage",
 }
 
 
@@ -22,6 +23,8 @@ def find_latest_run(results_dir: str = "results", config: str | None = None) -> 
         pattern = "ppo_ant_*"
     elif config == "terrain":
         pattern = "ppo_terrainant_*"
+    elif config == "damage":
+        pattern = "ppo_damageant_*"
     else:
         pattern = "ppo_*"
 
@@ -67,7 +70,9 @@ def load_run_config(run_dir: str) -> dict:
             return json.load(f)
     # Infer from directory name for older runs
     name = os.path.basename(run_dir.rstrip("/"))
-    if name in ("flat", "terrain") or "terrain" in name or "terrainant" in name:
+    if name in ("flat", "terrain", "damage") or "terrainant" in name or "damageant" in name:
+        if "damage" in name:
+            return {"env_id": "DamageAnt-v0", "fixed_disabled_legs": [1]}
         return {"env_id": "TerrainAnt-v0", "difficulty": 0.35}
     return {"env_id": "Ant-v5"}
 
@@ -78,4 +83,7 @@ def run_label(run_dir: str) -> str:
     if env_id == "TerrainAnt-v0":
         diff = cfg.get("difficulty", 0.3)
         return f"PPO — TerrainAnt-v0 (difficulty {diff})"
+    if env_id == "DamageAnt-v0":
+        legs = cfg.get("eval_fixed_disabled_legs", [1])
+        return f"PPO — DamageAnt-v0 (eval leg {legs} disabled)"
     return "PPO — Ant-v5 (flat ground)"

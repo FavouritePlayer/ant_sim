@@ -29,12 +29,27 @@ def train(cfg: dict):
         "progress_reward_weight",
         "velocity_tracking_weight",
         "target_speed_range",
+        "upright_reward_weight",
+        "height_reward_weight",
+        "tilt_penalty_weight",
+        "reset_noise_scale",
+        "min_uprightness",
     ):
         if key in cfg:
             env_kwargs[key] = tuple(cfg[key]) if key == "target_speed_range" else cfg[key]
+    if "terminate_when_tipped" in cfg:
+        env_kwargs["terminate_when_tipped"] = cfg["terminate_when_tipped"]
+    if "tip_grace_steps" in cfg:
+        env_kwargs["tip_grace_steps"] = cfg["tip_grace_steps"]
 
     if "difficulty_range" in cfg:
         env_kwargs["difficulty_range"] = tuple(cfg["difficulty_range"])
+    if "max_disabled_legs" in cfg:
+        env_kwargs["max_disabled_legs"] = cfg["max_disabled_legs"]
+    if "min_disabled_legs" in cfg:
+        env_kwargs["min_disabled_legs"] = cfg["min_disabled_legs"]
+    if "fixed_disabled_legs" in cfg:
+        env_kwargs["fixed_disabled_legs"] = list(cfg["fixed_disabled_legs"])
 
     env = make_vec_env(cfg["env_id"], n_envs=cfg["n_envs"], seed=cfg["seed"], env_kwargs=env_kwargs or None)
 
@@ -43,7 +58,11 @@ def train(cfg: dict):
         eval_kwargs["difficulty"] = cfg["eval_difficulty"]
     if "eval_target_speed_range" in cfg:
         eval_kwargs["target_speed_range"] = tuple(cfg["eval_target_speed_range"])
+    if "eval_fixed_disabled_legs" in cfg:
+        eval_kwargs["fixed_disabled_legs"] = list(cfg["eval_fixed_disabled_legs"])
     eval_kwargs.pop("difficulty_range", None)
+    eval_kwargs.pop("max_disabled_legs", None)
+    eval_kwargs.pop("min_disabled_legs", None)
     eval_env = make_vec_env(
         cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100, env_kwargs=eval_kwargs or None
     )
@@ -143,6 +162,12 @@ if __name__ == "__main__":
             "terrain_polish",
             "terrain_velocity",
             "terrain_velocity_v2",
+            "damage",
+            "damage_boost",
+            "damage_retrain",
+            "damage_upright",
+            "damage_polish",
+            "damage_final",
         ],
         default="ant",
     )
@@ -178,6 +203,18 @@ if __name__ == "__main__":
         from configs.ppo_terrain_velocity import config
     elif args.config == "terrain_velocity_v2":
         from configs.ppo_terrain_velocity_v2 import config
+    elif args.config == "damage":
+        from configs.ppo_damage import config
+    elif args.config == "damage_boost":
+        from configs.ppo_damage_boost import config
+    elif args.config == "damage_retrain":
+        from configs.ppo_damage_retrain import config
+    elif args.config == "damage_upright":
+        from configs.ppo_damage_upright import config
+    elif args.config == "damage_polish":
+        from configs.ppo_damage_polish import config
+    elif args.config == "damage_final":
+        from configs.ppo_damage_final import config
     else:
         from configs.ppo_ant import config
 

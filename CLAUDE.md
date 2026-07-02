@@ -32,7 +32,17 @@ python train.py --config terrain_speed
 python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
 ```
 
-Uses `checkpoints/flat/` and `checkpoints/terrain/` by default.
+**Train damage-robust agent (DamageAnt-v0, fine-tune from flat):**
+```bash
+python train.py --config damage
+```
+
+**Compare flat-trained vs damage-robust under leg failure:**
+```bash
+python compare_damage.py --disabled-legs 1 --seeds 0 1 2 3 4 5 6 7 8 9
+```
+
+Uses `checkpoints/flat/` and `checkpoints/terrain/` by default for terrain comparison; `checkpoints/damage/` for leg-damage comparison.
 
 **Evaluate and record demo video (uses latest run):**
 ```bash
@@ -58,7 +68,8 @@ Results land in `results/ppo_<env>_<timestamp>/`. TensorBoard logs go in `result
 ```
 ant_sim/
 ├── train.py               # main training loop (PPO via SB3)
-├── compare_policies.py    # control vs treatment evaluation on terrain
+├── compare_policies.py    # terrain control vs treatment
+├── compare_damage.py      # leg damage control vs treatment
 ├── evaluate.py            # loads best model, records demo.mp4
 ├── plot_results.py        # plots eval reward curve from evaluations.npz
 ├── check_env.py           # quick sanity check for the environment
@@ -69,7 +80,8 @@ ant_sim/
 │   └── ppo_terrain_boost.py  # fine-tune from stable terrain checkpoint
 ├── envs/
 │   ├── __init__.py        # registers TerrainAnt-v0 with gymnasium
-│   ├── terrain_ant.py     # custom env + CurriculumCallback
+│   ├── terrain_ant.py     # TerrainAnt-v0 + CurriculumCallback
+│   ├── damage_ant.py      # DamageAnt-v0 (leg actuator failure)
 │   └── assets/
 │       └── ant_terrain.xml  # MuJoCo XML with hfield terrain mesh
 └── results/               # gitignored — training outputs live here
@@ -83,18 +95,21 @@ The spawn point is zeroed (terrain height set to 0 at center) and the ant spawns
 
 **CurriculumCallback** linearly ramps difficulty from `start_difficulty` to `max_difficulty` over training. Note: curriculum was found to cause catastrophic forgetting — current configs use fixed difficulty instead.
 
+## Custom environment: DamageAnt-v0
+
+`DamageAntEnv` subclasses `AntEnv` on flat ground. Leg failure is modelled as zero actuator torques on selected legs (2 actuators per leg). Training randomizes 0..`max_disabled_legs` legs per episode; evaluation uses `fixed_disabled_legs` (e.g. `[1]`).
+
 ## Key checkpoints
 
 Scripts prefer committed checkpoints over gitignored `results/`:
 
 | Policy | Path | Best eval |
 |---|---|---:|
-| Flat baseline | `checkpoints/flat/` | 2421 |
-| Terrain (speed fine-tune) | `checkpoints/terrain/` | 1152 @ diff 0.38 |
+| Flat baseline | `checkpoints/flat/` | 3385 |
+| Terrain (balanced fine-tune) | `checkpoints/terrain/` | 994 @ diff 0.4 |
+| Damage (leg-failure fine-tune) | `checkpoints/damage/` | 3068 @ leg 1 out |
 
-Comparison artifacts (10 seeds @ diff 0.4): `docs/assets/terrain/comparison_*`
-
-**Leg-damage robustness is not in this repo.** Scope pivoted to terrain adaptation only. See LEARNING.md §3.
+Comparison artifacts: `docs/assets/terrain/comparison_*`, `docs/assets/damage/comparison_*`
 
 ## Key design notes
 

@@ -52,7 +52,7 @@ def plot(run_dir: str, show: bool = True):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", choices=["ant", "terrain"], default=None)
+    parser.add_argument("--config", choices=["ant", "terrain", "damage"], default=None)
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()

@@ -4,7 +4,7 @@ import gymnasium as gym
 
 
 def check_env(env_id: str, steps: int = 200, **make_kwargs):
-    if env_id.startswith("TerrainAnt"):
+    if env_id.startswith(("TerrainAnt", "DamageAnt")):
         from envs import register
         register()
 
@@ -40,8 +40,7 @@ if __name__ == "__main__":
     if args.env in ("terrain", "both"):
         check_env("TerrainAnt-v0", steps=args.steps, difficulty=0.3)
         check_env(
-            "TerrainAnt-v1",
+            "DamageAnt-v0",
             steps=args.steps,
-            difficulty=0.4,
-            target_speed_range=(0.35, 0.35),
+            fixed_disabled_legs=[1],
         )

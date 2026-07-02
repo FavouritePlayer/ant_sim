@@ -1,47 +1,67 @@
 # Quadruped Locomotion with PPO
 
-Train a 4-legged MuJoCo ant to walk on flat ground and procedurally generated rough terrain using Proximal Policy Optimization (PPO).
+Train a 4-legged MuJoCo ant to walk on flat ground, procedurally generated rough terrain, and under leg amputation — using Proximal Policy Optimization (PPO).
 
-**Research question:** Does training on randomized heightfield terrain produce a policy that generalizes to unseen rough ground better than a flat-trained baseline?
+**Research questions:**
+
+1. **Terrain adaptation** — Does training on randomized heightfield terrain generalize better than a flat-trained baseline on unseen rough ground?
+2. **Leg-damage robustness** — Does training for amputation produce a policy that stays upright and walks on three legs when a leg is removed at test time?
 
 **Stack:** Python · PyTorch · Gymnasium · MuJoCo · Stable-Baselines3
 
-**Scope note:** This project tests **terrain adaptation** (flat-trained vs. terrain-trained on rough ground). The original brief also described **leg-damage robustness** (disable actuators, policy still walks) — that variant is **not implemented** here; see [LEARNING.md §3](LEARNING.md#3-project-scope-terrain-adaptation-not-leg-damage).
+## Demos
 
-## Demo
+| Flat ground (Ant-v5) | Rough terrain (TerrainAnt-v0) | Terrain: control vs treatment | Leg damage: control vs treatment |
+|---|---|---|---|
+| ![Baseline reward curve](docs/assets/ant/reward_curve.png) | ![Terrain reward curve](docs/assets/terrain/reward_curve.png) | ![Terrain comparison](docs/assets/terrain/comparison_plot.png) | ![Damage comparison](docs/assets/damage/comparison_plot.png) |
 
-| Flat ground (Ant-v5) | Rough terrain (TerrainAnt-v0) | Control vs treatment (same terrain) |
-|---|---|---|
-| ![Baseline reward curve](docs/assets/ant/reward_curve.png) | ![Terrain reward curve](docs/assets/terrain/reward_curve.png) | ![Comparison plot](docs/assets/terrain/comparison_plot.png) |
+Videos: [flat demo](docs/assets/ant/demo.mp4) · [terrain demo](docs/assets/terrain/demo.mp4) · [terrain comparison](docs/assets/terrain/comparison_demo.mp4) · [damage comparison](docs/assets/damage/comparison_demo.mp4)
 
-Videos: [flat demo](docs/assets/ant/demo.mp4) · [terrain demo](docs/assets/terrain/demo.mp4) · **[comparison demo](docs/assets/terrain/comparison_demo.mp4)** (flat-trained vs terrain-adapted, matched seed)
+## Key results
 
-## Key result (control vs treatment)
+Metrics below come from `docs/assets/*/comparison_results.json` (reproduce with the compare scripts).
+
+### Experiment A — Terrain adaptation
 
 Both policies evaluated on **TerrainAnt-v0** at **difficulty 0.4**, **10 matched seeds**, 1000-step episodes:
 
-| Metric | Flat-trained (control) | Terrain-adapted | 
+| Metric | Flat-trained (control) | Terrain-adapted |
 |---|---:|---:|
-| Mean episode reward | 343 ± 79 | **893 ± 130** |
-| Mean episode length | 379 steps | **926 steps** |
-| Fall rate | **100%** | **30%** |
-| Mean forward distance | 7.0 m (before falling) | **3.9 m** |
-| Mean forward velocity | 0.45 m/s | **0.10 m/s** |
+| Mean episode reward | 424 ± 106 | **893 ± 130** |
+| Mean episode length | 719 steps | **926 steps** |
+| Fall rate | 50% | **30%** |
+| Mean forward velocity | 0.22 m/s | 0.10 m/s |
 
-**Takeaway:** The flat-trained policy falls on every evaluated seed. The terrain-adapted policy survives 7/10 episodes with **~4 m** mean forward distance and **3×** the forward velocity of the prior checkpoint — from a balanced fine-tune (`terrain_balanced`) on the stable boost parent.
-
-Run the comparison yourself:
+**Takeaway:** Terrain training improves survival on unseen hills. Locomotion is slower — the policy trades speed for stability.
 
 ```bash
 python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
+```
+
+### Experiment B — Leg damage robustness
+
+Both policies evaluated on **DamageAnt-v0** with **leg 1 amputated** (front-right removed — no geometry, no ground contact), **10 matched seeds**:
+
+| Metric | Flat-trained (control) | Damage-robust |
+|---|---:|---:|
+| Mean episode reward | 50 ± 40 | **1990 ± 953** |
+| Mean episode length | 21 steps | **809 steps** |
+| Fall rate | **100%** | **20%** |
+| Mean forward velocity | -0.19 m/s | **0.06 m/s** |
+
+**Takeaway:** Flat-trained policy tips over immediately. Damage-robust policy stays upright on 8/10 seeds and tripod-walks slowly.
+
+```bash
+python compare_damage.py --disabled-legs 1 --seeds 0 1 2 3 4 5 6 7 8 9
 ```
 
 ## Training results
 
 | Policy | Training | Best eval reward | Notes |
 |---|---|---:|---|
-| Ant-v5 (flat) | 1M fine-tune | **3385** | Phase 1 baseline |
-| TerrainAnt-v0 | 3M balanced fine-tune | **994** | `forward_reward_weight=2.0`, eval @ diff 0.4 |
+| Ant-v5 (flat) | 1M fine-tune | **3385** | Shared baseline for both experiments |
+| TerrainAnt-v0 | 3M balanced fine-tune | **994** @ diff 0.4 | `configs/ppo_terrain_balanced.py` |
+| DamageAnt-v0 | upright + final fine-tune | **5477** @ leg 1 out | `damage_upright` → `damage_final` |
 
 ## Quick start
 
@@ -51,75 +71,28 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 python check_env.py
-python train.py --config ant
-python train.py --config terrain_boost   # stable terrain agent
-python train.py --config terrain_balanced  # current terrain checkpoint recipe
-python train.py --config terrain_velocity  # experimental velocity-command env (TerrainAnt-v1)
-python compare_policies.py               # control vs treatment (uses checkpoints/)
-python evaluate.py --config terrain
-python collect_artifacts.py --all        # refresh docs/assets/ + comparison
+python train.py --config terrain_balanced
+python train.py --config damage_upright   # then damage_final to reproduce damage checkpoint
+python compare_policies.py
+python compare_damage.py
+python collect_artifacts.py --all
 ```
 
-Committed checkpoints (~300 KB each) in `checkpoints/` let you run compare/evaluate without retraining. See [checkpoints/README.md](checkpoints/README.md).
-
-TensorBoard: `tensorboard --logdir results/tb_logs`
+Committed checkpoints in `checkpoints/` let you run compare/evaluate without retraining.
 
 ## How it works
 
-### Reinforcement learning loop
+**TerrainAnt-v0** — procedural heightfield terrain, spawn safety, boundary termination.
 
-1. **Agent** (PPO policy network) observes the ant's state (joint angles, velocities, contact forces — 105-dim vector).
-2. **Action** — 8 continuous torques applied to leg joints, clipped to [-1, 1].
-3. **Environment** (MuJoCo physics) simulates one timestep and returns reward + next state.
-4. **PPO** collects rollouts from 4 parallel envs, then updates the policy to increase expected reward while staying close to the old policy (clipped surrogate objective).
-
-### Custom terrain environment
-
-`TerrainAnt-v0` subclasses Gymnasium's `AntEnv` and swaps the flat floor for a MuJoCo heightfield. Each episode:
-
-1. Generates terrain as a sum of 6 low-frequency sinusoids with sharpened peaks and troughs.
-2. Maps to MuJoCo heightfield data in [0, 1] (up to ~3 m elevation above a 0.1 m base).
-3. Sets spawn height to local terrain + 0.55 m clearance.
-
-### Experimental design
-
-| | Control | Treatment |
-|---|---|---|
-| **Policy** | Flat-trained Ant-v5 checkpoint | Terrain-adapted checkpoint (boost fine-tune) |
-| **Test env** | TerrainAnt-v0 | TerrainAnt-v0 |
-| **Held constant** | Difficulty (0.4), seeds, max steps (1000), deterministic actions |
-| **Metric** | Episode reward, survival (fall rate), forward distance |
-
-### What failed
-
-- **Curriculum learning** caused catastrophic forgetting when difficulty ramped too fast.
-- **Fine-tune from flat** alone produced fast but unstable locomotion on terrain (fell ~150 steps).
-- **Boost fine-tune** from the stable terrain checkpoint + higher forward reward produced a stable baseline.
-- **Speed fine-tune** (`terrain_speed`) improved forward distance but raised fall rate.
-- **Balanced fine-tune** (`terrain_balanced`) — production checkpoint: **30%** fall, **3.9 m** forward @ diff 0.4.
-- **Velocity-command** (`TerrainAnt-v1`, `terrain_velocity`) — **0%** fall but only **~1.5 m** forward; experimental, not the production checkpoint.
-
-## Project structure
-
-```
-train.py               # PPO training loop (+ fine-tune support)
-compare_policies.py    # Control vs treatment evaluation
-evaluate.py            # Record demo.mp4 from best checkpoint
-plot_results.py        # Plot eval reward curve
-check_env.py           # Sanity-check both environments
-collect_artifacts.py   # Copy results into docs/assets/
-configs/               # Hyperparameters (ant, terrain, terrain_boost)
-envs/terrain_ant.py    # Custom env + curriculum callback
-docs/assets/           # Committed plots, comparison results, demo videos
-```
+**DamageAnt-v0** — leg amputation (invisible geoms, no collision, zero actuators) with gated forward reward and tip-over termination after a short grace period.
 
 ## Resume bullet
 
-> Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **893 ± 130** episode reward vs **343 ± 79** for a flat-trained baseline, with **30% vs 100%** fall rate and **3.9 m** mean forward distance under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
+> Trained terrain-adapted and damage-robust quadruped policies (PPO, MuJoCo Ant-v5). On unseen heightfield terrain: **893 ± 130** vs **424 ± 106** reward, **30% vs 50%** fall rate. Under front-right leg amputation: **1990 ± 953** vs **50 ± 40** reward, **20% vs 100%** fall rate, **809 vs 21** mean episode steps. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
 
 ## Further reading
 
-See [LEARNING.md](LEARNING.md) for a walkthrough of the RL and code concepts behind this project.
+See [LEARNING.md](LEARNING.md) and [MUJOCO_PROJECT_SCOPE.md](MUJOCO_PROJECT_SCOPE.md).
 
 ## License
 

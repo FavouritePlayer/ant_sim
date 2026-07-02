@@ -1,0 +1,25 @@
+# Fine-tune damage-robust policy for more forward motion under amputation.
+
+config = {
+    "env_id": "DamageAnt-v0",
+    "n_envs": 6,
+    "total_timesteps": 1_000_000,
+    "policy": "MlpPolicy",
+    "learning_rate": 2e-5,
+    "n_steps": 2048,
+    "batch_size": 256,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.1,
+    "ent_coef": 0.002,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "seed": 42,
+    "forward_reward_weight": 3.0,
+    "max_disabled_legs": 2,
+    "eval_fixed_disabled_legs": [1],
+    "n_eval_episodes": 10,
+    "early_stop_patience": 10,
+    "pretrained_path": "checkpoints/damage/best_model/best_model",
+}

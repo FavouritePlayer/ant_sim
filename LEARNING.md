@@ -24,18 +24,29 @@ Unlike supervised learning (labeled examples), the agent only gets a scalar **re
 
 Each episode runs up to 1000 steps. The ant "dies" if it flips over (torso too low/high).
 
-## 3. Project scope: terrain adaptation, not leg damage
+## 3. Project scope: two robustness experiments
 
-The original project brief (`MUJOCO_PROJECT_SCOPE.md`) described two possible contributions:
+This repo ships **two** control-vs-treatment comparisons against the same flat-trained baseline (`checkpoints/flat/`):
 
-| Option | Idea | Status in this repo |
-|---|---|---|
-| **Leg-damage robustness** | Randomly disable leg actuators during training; compare damaged baseline vs. robust policy | **Not implemented** — would need a failure-injection wrapper that zeros torques on selected joints and retraining under that distribution |
-| **Terrain adaptation** | Train on randomized heightfield terrain; compare flat-trained vs. terrain-adapted policy on unseen rough ground | **Implemented** — this is the actual contribution |
+| Experiment | Env | Training distribution | Test condition | Script |
+|---|---|---|---|---|
+| **Terrain adaptation** | `TerrainAnt-v0` | Randomized heightfield terrain | Unseen terrain @ difficulty 0.4 | `compare_policies.py` |
+| **Leg-damage robustness** | `DamageAnt-v0` | Random 0–2 legs disabled per episode | Fixed leg 1 disabled | `compare_damage.py` |
 
-We picked **one** contribution (terrain) and did not straddle. The resume bullet and comparison experiment are about **generalization to rough terrain**, not walking with missing limbs.
+Both use the same PPO stack and the same experimental framing: hold the test environment and seeds constant, swap only the policy.
 
-If you wanted leg-damage next, the env change would look roughly like: at each reset, sample k ∈ {0,1,2} leg indices and multiply those action dimensions by 0 before `step()`. The flat-trained baseline would collapse under damage; a policy trained with randomized damage would be the treatment. That code path does not exist in this repository.
+**Terrain** is the dramatic result — flat-trained policy falls 100% of the time on rough ground. **Leg damage** is subtler — Ant-v5 does not collapse with one leg out, but damage-trained locomotion is faster and more seed-stable.
+
+### DamageAnt-v0 — leg amputation
+
+```python
+# envs/damage_ant.py — disable collision + visibility; zero actuators
+self.model.geom_contype[gid] = 0   # no ground contact
+self.model.geom_rgba[gid, 3] = 0   # invisible (geom size kept for stable inertia)
+masked = action * self._action_mask
+```
+
+Each leg has two actuators (hip + ankle). Training samples how many legs to amputate (0..`max_disabled_legs`); evaluation uses `fixed_disabled_legs=[1]` (front right).
 
 ## 4. PPO — Proximal Policy Optimization
 
@@ -84,7 +95,7 @@ env = make_vec_env("Ant-v5", n_envs=4, seed=42)
 EvalCallback(eval_env, best_model_save_path=..., eval_freq=12500, n_eval_episodes=5)
 ```
 
-Every 12,500 training steps, the agent runs 5 deterministic episodes in a held-out env. If mean reward beats the previous best, the model is saved to `best_model/`. Committed copies for reproducibility live in `checkpoints/flat/` and `checkpoints/terrain/` (~300 KB each). Scripts default to those paths so a fresh clone can run demos without retraining.
+Every 12,500 training steps, the agent runs 5 deterministic episodes in a held-out env. If mean reward beats the previous best, the model is saved to `best_model/`. Committed copies for reproducibility live in `checkpoints/flat/`, `checkpoints/terrain/`, and `checkpoints/damage/` (~300 KB each). Scripts default to those paths so a fresh clone can run demos without retraining.
 
 ## 7. Custom terrain — TerrainAnt-v0
 
@@ -139,9 +150,9 @@ The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to ex
 "curriculum": {"start": 0.05, "max": 0.8, "interval": 100_000},
 ```
 
-## 9. Control vs. treatment experiment
+## 9. Control vs. treatment experiments
 
-This is the resume-grade result — implemented in `compare_policies.py`.
+### Terrain adaptation (`compare_policies.py`)
 
 | | Control | Treatment |
 |---|---|---|
@@ -150,23 +161,42 @@ This is the resume-grade result — implemented in `compare_policies.py`.
 | **Held constant** | Difficulty 0.4, matched seeds, 1000 max steps, deterministic actions |
 | **Metrics** | Episode reward, steps survived, fall rate, forward distance |
 
-**Results (10 seeds, difficulty 0.4, reproducible terrain seeding):**
+**Results (10 seeds, difficulty 0.4):**
 
-| Metric | Flat-trained | Terrain-adapted (speed) |
+| Metric | Flat-trained | Terrain-adapted |
 |---|---:|---:|
-| Mean reward | 500 ± 126 | 848 ± 130 |
-| Mean steps | 560 | 887 |
-| Fall rate | 100% | 30% |
-| Mean forward distance | 8.9 m | 2.6 m |
-| Mean forward velocity | 0.41 m/s | 0.08 m/s |
+| Mean reward | 424 ± 106 | 893 ± 130 |
+| Fall rate | 50% | 30% |
+| Mean forward distance | 3.8 m | 3.9 m |
+| Mean forward velocity | 0.22 m/s | 0.10 m/s |
 
-**Interpretation:** The flat policy always falls but often covers more ground in x before doing so. The speed fine-tune (`configs/ppo_terrain_speed.py`, `forward_reward_weight=2.5`) roughly **tripled** mean forward distance vs. the prior boost checkpoint (0.9 m → 2.6 m) at the cost of higher fall rate (10% → 30%). Still far better than flat (100% fall).
+**Interpretation:** The flat policy always falls. The terrain-adapted policy survives most episodes but locomotes cautiously on hills.
 
-**Bug fixed:** terrain was generated before Gymnasium applied the episode seed, making comparisons non-reproducible. `_randomise_terrain()` now runs inside `reset_model()` after the RNG is seeded.
+### Leg damage (`compare_damage.py`)
+
+| | Control | Treatment |
+|---|---|---|
+| **Policy** | Flat-trained Ant-v5 | Damage-robust (`checkpoints/damage/`) |
+| **Test env** | DamageAnt-v0, leg 1 disabled | Same |
+| **Held constant** | Matched seeds, 1000 max steps, deterministic actions |
+
+**Results (10 seeds, leg 1 amputated):**
+
+| Metric | Flat-trained | Damage-robust |
+|---|---:|---:|
+| Mean reward | 50 ± 40 | 1990 ± 953 |
+| Mean steps | 21 | 809 |
+| Fall rate | 100% | 20% |
+| Mean forward velocity | -0.19 m/s | 0.06 m/s |
+
+**Interpretation:** Flat-trained policy tips over on every seed within ~20 steps. Damage-robust policy stays upright on 8/10 seeds and tripod-walks slowly. Velocity is low because forward reward is gated on torso height and uprightness.
+
+**Bug fixed (terrain):** terrain was generated before Gymnasium applied the episode seed, making comparisons non-reproducible. `_randomise_terrain()` now runs inside `reset_model()` after the RNG is seeded.
 
 ```bash
 python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
-python collect_artifacts.py --all   # refresh docs/assets/ including comparison
+python compare_damage.py --disabled-legs 1 --seeds 0 1 2 3 4 5 6 7 8 9
+python collect_artifacts.py --all   # refresh docs/assets/ including comparisons
 ```
 
 ## 10. What we tried (and what failed)
