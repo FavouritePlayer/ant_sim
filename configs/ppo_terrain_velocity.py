@@ -1,0 +1,28 @@
+# Velocity-command terrain: policy sees target speed and is rewarded for tracking it.
+
+config = {
+    "env_id": "TerrainAnt-v1",
+    "n_envs": 6,
+    "total_timesteps": 3_000_000,
+    "policy": "MlpPolicy",
+    "learning_rate": 3e-4,
+    "n_steps": 2048,
+    "batch_size": 256,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "ent_coef": 0.005,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "seed": 42,
+    "difficulty": 0.38,
+    "eval_difficulty": 0.4,
+    "n_eval_episodes": 10,
+    "forward_reward_weight": 1.5,
+    "ctrl_cost_weight": 0.45,
+    "velocity_tracking_weight": 1.5,
+    "target_speed_range": [0.25, 0.5],
+    "eval_target_speed_range": [0.35, 0.35],
+    "early_stop_patience": 15,
+}

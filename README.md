@@ -54,6 +54,7 @@ python check_env.py
 python train.py --config ant
 python train.py --config terrain_boost   # stable terrain agent
 python train.py --config terrain_balanced  # current terrain checkpoint recipe
+python train.py --config terrain_velocity  # experimental velocity-command env (TerrainAnt-v1)
 python compare_policies.py               # control vs treatment (uses checkpoints/)
 python evaluate.py --config terrain
 python collect_artifacts.py --all        # refresh docs/assets/ + comparison
@@ -95,7 +96,9 @@ TensorBoard: `tensorboard --logdir results/tb_logs`
 - **Fine-tune from flat** alone produced fast but unstable locomotion on terrain (fell ~150 steps).
 - **Boost fine-tune** from the stable terrain checkpoint + higher forward reward produced a stable baseline.
 - **Speed fine-tune** (`terrain_speed`) improved forward distance but raised fall rate.
-- **Balanced fine-tune** (`terrain_balanced`, `forward_reward_weight=2.0`, train/eval @ diff 0.4) — current checkpoint: **994** eval, **30%** fall, **3.9 m** forward on comparison seeds.
+- **Balanced fine-tune** (`terrain_balanced`) — production checkpoint: **30%** fall, **3.9 m** forward @ diff 0.4.
+- **Velocity-command** (`TerrainAnt-v1`, `terrain_velocity`) — **0%** fall but only **~1.5 m** forward; trades speed for stability.
+- **Velocity-command env** (`TerrainAnt-v1`, `terrain_velocity`) — 0% fall rate but slower (~1.5 m forward); experimental, not the production checkpoint.
 
 ## Project structure
 

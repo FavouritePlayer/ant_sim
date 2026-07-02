@@ -3,13 +3,12 @@ import argparse
 import gymnasium as gym
 
 
-def check_env(env_id: str, steps: int = 200):
-    if env_id == "TerrainAnt-v0":
+def check_env(env_id: str, steps: int = 200, **make_kwargs):
+    if env_id.startswith("TerrainAnt"):
         from envs import register
         register()
-        env = gym.make(env_id, difficulty=0.3)
-    else:
-        env = gym.make(env_id)
+
+    env = gym.make(env_id, **make_kwargs) if make_kwargs else gym.make(env_id)
 
     obs, info = env.reset()
     print(f"\n=== {env_id} ===")
@@ -39,4 +38,10 @@ if __name__ == "__main__":
     if args.env in ("ant", "both"):
         check_env("Ant-v5", steps=args.steps)
     if args.env in ("terrain", "both"):
-        check_env("TerrainAnt-v0", steps=args.steps)
+        check_env("TerrainAnt-v0", steps=args.steps, difficulty=0.3)
+        check_env(
+            "TerrainAnt-v1",
+            steps=args.steps,
+            difficulty=0.4,
+            target_speed_range=(0.35, 0.35),
+        )

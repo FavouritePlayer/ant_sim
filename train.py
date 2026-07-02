@@ -27,9 +27,11 @@ def train(cfg: dict):
         "ctrl_cost_weight",
         "contact_cost_weight",
         "progress_reward_weight",
+        "velocity_tracking_weight",
+        "target_speed_range",
     ):
         if key in cfg:
-            env_kwargs[key] = cfg[key]
+            env_kwargs[key] = tuple(cfg[key]) if key == "target_speed_range" else cfg[key]
 
     if "difficulty_range" in cfg:
         env_kwargs["difficulty_range"] = tuple(cfg["difficulty_range"])
@@ -39,6 +41,8 @@ def train(cfg: dict):
     eval_kwargs = dict(env_kwargs)
     if "eval_difficulty" in cfg:
         eval_kwargs["difficulty"] = cfg["eval_difficulty"]
+    if "eval_target_speed_range" in cfg:
+        eval_kwargs["target_speed_range"] = tuple(cfg["eval_target_speed_range"])
     eval_kwargs.pop("difficulty_range", None)
     eval_env = make_vec_env(
         cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100, env_kwargs=eval_kwargs or None
@@ -137,6 +141,8 @@ if __name__ == "__main__":
             "terrain_diverse",
             "terrain_refined",
             "terrain_polish",
+            "terrain_velocity",
+            "terrain_velocity_v2",
         ],
         default="ant",
     )
@@ -168,6 +174,10 @@ if __name__ == "__main__":
         from configs.ppo_terrain_refined import config
     elif args.config == "terrain_polish":
         from configs.ppo_terrain_polish import config
+    elif args.config == "terrain_velocity":
+        from configs.ppo_terrain_velocity import config
+    elif args.config == "terrain_velocity_v2":
+        from configs.ppo_terrain_velocity_v2 import config
     else:
         from configs.ppo_ant import config
 

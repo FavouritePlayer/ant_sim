@@ -215,6 +215,46 @@ class TerrainAntEnv(AntEnv):
         self._write_terrain(terrain)
 
 
+class VelocityTerrainAntEnv(TerrainAntEnv):
+    """Terrain ant with a commanded forward speed in the observation + tracking reward."""
+
+    def __init__(
+        self,
+        velocity_tracking_weight: float = 1.5,
+        target_speed_range: tuple[float, float] = (0.25, 0.5),
+        **kwargs,
+    ):
+        self._velocity_tracking_weight = float(velocity_tracking_weight)
+        self._target_speed_range = tuple(target_speed_range)
+        self._target_speed = 0.35
+        super().__init__(**kwargs)
+        low = np.append(self.observation_space.low, 0.0)
+        high = np.append(self.observation_space.high, 1.0)
+        import gymnasium as gym
+
+        self.observation_space = gym.spaces.Box(
+            low=low, high=high, dtype=np.float64
+        )
+
+    def _get_obs(self):
+        return np.append(super()._get_obs(), self._target_speed)
+
+    def reset_model(self):
+        lo, hi = self._target_speed_range
+        self._target_speed = float(self.np_random.uniform(lo, hi))
+        return super().reset_model()
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = super().step(action)
+        x_vel = info["x_velocity"]
+        err = x_vel - self._target_speed
+        tracking = -self._velocity_tracking_weight * (err * err)
+        reward += tracking
+        info["target_speed"] = self._target_speed
+        info["velocity_tracking_reward"] = float(tracking)
+        return obs, reward, terminated, truncated, info
+
+
 class CurriculumCallback(BaseCallback):
     """Linearly ramps terrain difficulty over training."""
 
