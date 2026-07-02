@@ -7,10 +7,10 @@ from stable_baselines3 import PPO
 
 from results_utils import load_run_config, resolve_run_dir
 
-# Demo defaults — difficulty 0.35 matches training; seed is auto-picked unless set
-DEMO_DIFFICULTY = 0.35
+# Demo defaults — low camera exaggerates relief; difficulty 0.4 matches comparison eval
+DEMO_DIFFICULTY = 0.4
 DEMO_SEED = None  # auto-pick longest full episode
-DEMO_CAMERA = "track"
+DEMO_CAMERA = "demo"
 TARGET_FRAMES = 1000  # one full episode (~33 s at 30 fps)
 SEED_SCAN = 64
 

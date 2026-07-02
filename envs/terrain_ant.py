@@ -66,7 +66,8 @@ class TerrainAntEnv(AntEnv):
     difficulty in [0, 1] scales relief: 0 = flat, 1 = full ~2.9 m peak-to-trough.
     """
 
-    def __init__(self, difficulty: float = 0.3, **kwargs):
+    def __init__(self, difficulty: float = 0.3, difficulty_range: tuple[float, float] | None = None, **kwargs):
+        self._difficulty_range = difficulty_range
         self.difficulty = float(np.clip(difficulty, 0.0, 1.0))
         self._terrain_grid = np.full((NROW, NCOL), 0.5, dtype=np.float64)
         kwargs.setdefault("healthy_z_range", (0.08, 4.0))
@@ -101,6 +102,9 @@ class TerrainAntEnv(AntEnv):
         return super().reset(**kwargs)
 
     def reset_model(self):
+        if self._difficulty_range is not None:
+            lo, hi = self._difficulty_range
+            self.difficulty = float(self.np_random.uniform(lo, hi))
         self._randomise_terrain()
 
         noise_low = -self._reset_noise_scale

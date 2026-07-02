@@ -26,11 +26,15 @@ def train(cfg: dict):
         if key in cfg:
             env_kwargs[key] = cfg[key]
 
+    if "difficulty_range" in cfg:
+        env_kwargs["difficulty_range"] = tuple(cfg["difficulty_range"])
+
     env = make_vec_env(cfg["env_id"], n_envs=cfg["n_envs"], seed=cfg["seed"], env_kwargs=env_kwargs or None)
 
     eval_kwargs = dict(env_kwargs)
     if "eval_difficulty" in cfg:
         eval_kwargs["difficulty"] = cfg["eval_difficulty"]
+    eval_kwargs.pop("difficulty_range", None)
     eval_env = make_vec_env(
         cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100, env_kwargs=eval_kwargs or None
     )
@@ -115,6 +119,7 @@ if __name__ == "__main__":
             "terrain_speed",
             "terrain_speed_refine",
             "terrain_balanced",
+            "terrain_diverse",
         ],
         default="ant",
     )
@@ -140,6 +145,8 @@ if __name__ == "__main__":
         from configs.ppo_terrain_speed_refine import config
     elif args.config == "terrain_balanced":
         from configs.ppo_terrain_balanced import config
+    elif args.config == "terrain_diverse":
+        from configs.ppo_terrain_diverse import config
     else:
         from configs.ppo_ant import config
 

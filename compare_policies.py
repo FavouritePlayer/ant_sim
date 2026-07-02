@@ -41,7 +41,7 @@ def make_terrain_env(difficulty: float, render: bool = False):
     if render:
         kwargs.update(
             render_mode="rgb_array",
-            camera_name="track",
+            camera_name="demo",
             width=640,
             height=480,
         )
