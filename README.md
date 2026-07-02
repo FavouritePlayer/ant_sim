@@ -97,8 +97,7 @@ TensorBoard: `tensorboard --logdir results/tb_logs`
 - **Boost fine-tune** from the stable terrain checkpoint + higher forward reward produced a stable baseline.
 - **Speed fine-tune** (`terrain_speed`) improved forward distance but raised fall rate.
 - **Balanced fine-tune** (`terrain_balanced`) — production checkpoint: **30%** fall, **3.9 m** forward @ diff 0.4.
-- **Velocity-command** (`TerrainAnt-v1`, `terrain_velocity`) — **0%** fall but only **~1.5 m** forward; trades speed for stability.
-- **Velocity-command env** (`TerrainAnt-v1`, `terrain_velocity`) — 0% fall rate but slower (~1.5 m forward); experimental, not the production checkpoint.
+- **Velocity-command** (`TerrainAnt-v1`, `terrain_velocity`) — **0%** fall but only **~1.5 m** forward; experimental, not the production checkpoint.
 
 ## Project structure
 
