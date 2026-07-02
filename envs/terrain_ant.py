@@ -66,8 +66,15 @@ class TerrainAntEnv(AntEnv):
     difficulty in [0, 1] scales relief: 0 = flat, 1 = full ~2.9 m peak-to-trough.
     """
 
-    def __init__(self, difficulty: float = 0.3, difficulty_range: tuple[float, float] | None = None, **kwargs):
+    def __init__(
+        self,
+        difficulty: float = 0.3,
+        difficulty_range: tuple[float, float] | None = None,
+        progress_reward_weight: float = 0.0,
+        **kwargs,
+    ):
         self._difficulty_range = difficulty_range
+        self._progress_reward_weight = float(progress_reward_weight)
         self.difficulty = float(np.clip(difficulty, 0.0, 1.0))
         self._terrain_grid = np.full((NROW, NCOL), 0.5, dtype=np.float64)
         kwargs.setdefault("healthy_z_range", (0.08, 4.0))
@@ -151,6 +158,8 @@ class TerrainAntEnv(AntEnv):
 
         observation = self._get_obs()
         reward, reward_info = self._get_rew(x_velocity, action)
+        if self._progress_reward_weight > 0 and x_velocity > 0:
+            reward += x_velocity * self._progress_reward_weight
         # Small penalty for sliding backward — keeps demos directionally purposeful.
         if x_velocity < 0:
             reward += x_velocity * 0.25

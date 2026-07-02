@@ -5,7 +5,7 @@ import argparse
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.callbacks import EvalCallback, CallbackList
+from stable_baselines3.common.callbacks import EvalCallback, CallbackList, StopTrainingOnNoModelImprovement
 
 
 def train(cfg: dict):
@@ -22,7 +22,12 @@ def train(cfg: dict):
     env_kwargs = {}
     if "difficulty" in cfg:
         env_kwargs["difficulty"] = cfg["difficulty"]
-    for key in ("forward_reward_weight", "ctrl_cost_weight", "contact_cost_weight"):
+    for key in (
+        "forward_reward_weight",
+        "ctrl_cost_weight",
+        "contact_cost_weight",
+        "progress_reward_weight",
+    ):
         if key in cfg:
             env_kwargs[key] = cfg[key]
 
@@ -71,6 +76,15 @@ def train(cfg: dict):
 
     callbacks = []
 
+    stop_callback = None
+    patience = cfg.get("early_stop_patience")
+    if patience:
+        stop_callback = StopTrainingOnNoModelImprovement(
+            max_no_improvement_evals=patience,
+            min_evals=5,
+            verbose=1,
+        )
+
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path=os.path.join(log_dir, "best_model"),
@@ -78,6 +92,7 @@ def train(cfg: dict):
         eval_freq=max(50_000 // cfg["n_envs"], 1),
         n_eval_episodes=cfg.get("n_eval_episodes", 5),
         deterministic=True,
+        callback_after_eval=stop_callback,
     )
     callbacks.append(eval_callback)
 
@@ -120,6 +135,8 @@ if __name__ == "__main__":
             "terrain_speed_refine",
             "terrain_balanced",
             "terrain_diverse",
+            "terrain_refined",
+            "terrain_polish",
         ],
         default="ant",
     )
@@ -147,6 +164,10 @@ if __name__ == "__main__":
         from configs.ppo_terrain_balanced import config
     elif args.config == "terrain_diverse":
         from configs.ppo_terrain_diverse import config
+    elif args.config == "terrain_refined":
+        from configs.ppo_terrain_refined import config
+    elif args.config == "terrain_polish":
+        from configs.ppo_terrain_polish import config
     else:
         from configs.ppo_ant import config
 

@@ -1,0 +1,28 @@
+# Refined fine-tune: narrow difficulty band, progress reward, early stopping.
+
+config = {
+    "env_id": "TerrainAnt-v0",
+    "n_envs": 6,
+    "total_timesteps": 2_500_000,
+    "policy": "MlpPolicy",
+    "learning_rate": 2e-5,
+    "n_steps": 2048,
+    "batch_size": 256,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.06,
+    "ent_coef": 0.002,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "seed": 42,
+    "difficulty": 0.4,
+    "difficulty_range": [0.38, 0.44],
+    "eval_difficulty": 0.4,
+    "n_eval_episodes": 10,
+    "forward_reward_weight": 2.0,
+    "progress_reward_weight": 0.35,
+    "ctrl_cost_weight": 0.45,
+    "early_stop_patience": 12,
+    "pretrained_path": "checkpoints/terrain/best_model/best_model",
+}
