@@ -22,13 +22,13 @@ Both policies evaluated on **TerrainAnt-v0** at **difficulty 0.4**, **10 matched
 
 | Metric | Flat-trained (control) | Terrain-adapted | 
 |---|---:|---:|
-| Mean episode reward | 500 ± 126 | **848 ± 130** |
-| Mean episode length | 560 steps | **887 steps** |
+| Mean episode reward | 343 ± 79 | **893 ± 130** |
+| Mean episode length | 379 steps | **926 steps** |
 | Fall rate | **100%** | **30%** |
-| Mean forward distance | 8.9 m (before falling) | **2.6 m** |
-| Mean forward velocity | 0.41 m/s | **0.08 m/s** |
+| Mean forward distance | 7.0 m (before falling) | **3.9 m** |
+| Mean forward velocity | 0.45 m/s | **0.10 m/s** |
 
-**Takeaway:** The flat-trained policy falls on every evaluated seed. The terrain-adapted policy survives 7/10 episodes and moves **~2.8× farther** than the prior terrain checkpoint (0.9 m → 2.6 m mean forward distance) after a speed-focused fine-tune (`terrain_speed`). It trades some stability (30% fall rate vs. 10% before) for clearly stronger locomotion on hills.
+**Takeaway:** The flat-trained policy falls on every evaluated seed. The terrain-adapted policy survives 7/10 episodes with **~4 m** mean forward distance and **3×** the forward velocity of the prior checkpoint — from a balanced fine-tune (`terrain_balanced`) on the stable boost parent.
 
 Run the comparison yourself:
 
@@ -40,8 +40,8 @@ python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
 
 | Policy | Training | Best eval reward | Notes |
 |---|---|---:|---|
-| Ant-v5 (flat) | 2M steps | **2421** | Phase 1 baseline |
-| TerrainAnt-v0 | 2M speed fine-tune | **1152** | `forward_reward_weight=2.5` |
+| Ant-v5 (flat) | 1M fine-tune | **3385** | Phase 1 baseline |
+| TerrainAnt-v0 | 3M balanced fine-tune | **994** | `forward_reward_weight=2.0`, eval @ diff 0.4 |
 
 ## Quick start
 
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 python check_env.py
 python train.py --config ant
 python train.py --config terrain_boost   # stable terrain agent
-python train.py --config terrain_speed   # speed fine-tune (current checkpoint)
+python train.py --config terrain_balanced  # current terrain checkpoint recipe
 python compare_policies.py               # control vs treatment (uses checkpoints/)
 python evaluate.py --config terrain
 python collect_artifacts.py --all        # refresh docs/assets/ + comparison
@@ -94,7 +94,8 @@ TensorBoard: `tensorboard --logdir results/tb_logs`
 - **Curriculum learning** caused catastrophic forgetting when difficulty ramped too fast.
 - **Fine-tune from flat** alone produced fast but unstable locomotion on terrain (fell ~150 steps).
 - **Boost fine-tune** from the stable terrain checkpoint + higher forward reward produced a stable baseline.
-- **Speed fine-tune** (`terrain_speed`, `forward_reward_weight=2.5`) improved mean forward distance from **0.9 m → 2.6 m** on matched eval seeds (reproducible terrain seeding fix in `TerrainAntEnv.reset_model`).
+- **Speed fine-tune** (`terrain_speed`) improved forward distance but raised fall rate.
+- **Balanced fine-tune** (`terrain_balanced`, `forward_reward_weight=2.0`, train/eval @ diff 0.4) — current checkpoint: **994** eval, **30%** fall, **3.9 m** forward on comparison seeds.
 
 ## Project structure
 
@@ -112,7 +113,7 @@ docs/assets/           # Committed plots, comparison results, demo videos
 
 ## Resume bullet
 
-> Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **848 ± 130** episode reward vs **500 ± 126** for a flat-trained baseline, with **30% vs 100%** fall rate and **2.6 m** mean forward distance under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
+> Trained a terrain-adapted quadruped locomotion policy (PPO, MuJoCo Ant-v5); on unseen heightfield terrain, terrain-trained agent achieved **893 ± 130** episode reward vs **343 ± 79** for a flat-trained baseline, with **30% vs 100%** fall rate and **3.9 m** mean forward distance under matched seeds. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
 
 ## Further reading
 

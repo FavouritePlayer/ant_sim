@@ -27,7 +27,13 @@ def train(cfg: dict):
             env_kwargs[key] = cfg[key]
 
     env = make_vec_env(cfg["env_id"], n_envs=cfg["n_envs"], seed=cfg["seed"], env_kwargs=env_kwargs or None)
-    eval_env = make_vec_env(cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100, env_kwargs=env_kwargs or None)
+
+    eval_kwargs = dict(env_kwargs)
+    if "eval_difficulty" in cfg:
+        eval_kwargs["difficulty"] = cfg["eval_difficulty"]
+    eval_env = make_vec_env(
+        cfg["env_id"], n_envs=1, seed=cfg["seed"] + 100, env_kwargs=eval_kwargs or None
+    )
 
     pretrained = cfg.get("pretrained_path")
     if pretrained:
@@ -66,7 +72,7 @@ def train(cfg: dict):
         best_model_save_path=os.path.join(log_dir, "best_model"),
         log_path=os.path.join(log_dir, "eval"),
         eval_freq=max(50_000 // cfg["n_envs"], 1),
-        n_eval_episodes=5,
+        n_eval_episodes=cfg.get("n_eval_episodes", 5),
         deterministic=True,
     )
     callbacks.append(eval_callback)
@@ -98,7 +104,20 @@ def train(cfg: dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", choices=["ant", "terrain", "terrain_finetune", "terrain_boost", "terrain_speed", "terrain_speed_refine"], default="ant")
+    parser.add_argument(
+        "--config",
+        choices=[
+            "ant",
+            "ant_finetune",
+            "terrain",
+            "terrain_finetune",
+            "terrain_boost",
+            "terrain_speed",
+            "terrain_speed_refine",
+            "terrain_balanced",
+        ],
+        default="ant",
+    )
     parser.add_argument("--timesteps", type=int, default=None)
     parser.add_argument(
         "--pretrained",
@@ -107,7 +126,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.config == "terrain":
+    if args.config == "ant_finetune":
+        from configs.ppo_ant_finetune import config
+    elif args.config == "terrain":
         from configs.ppo_terrain import config
     elif args.config == "terrain_finetune":
         from configs.ppo_terrain_finetune import config
@@ -117,6 +138,8 @@ if __name__ == "__main__":
         from configs.ppo_terrain_speed import config
     elif args.config == "terrain_speed_refine":
         from configs.ppo_terrain_speed_refine import config
+    elif args.config == "terrain_balanced":
+        from configs.ppo_terrain_balanced import config
     else:
         from configs.ppo_ant import config
 

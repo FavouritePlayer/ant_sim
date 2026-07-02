@@ -147,6 +147,9 @@ class TerrainAntEnv(AntEnv):
 
         observation = self._get_obs()
         reward, reward_info = self._get_rew(x_velocity, action)
+        # Small penalty for sliding backward — keeps demos directionally purposeful.
+        if x_velocity < 0:
+            reward += x_velocity * 0.25
         terminated = (not self.is_healthy) and self._terminate_when_unhealthy
         if self._outside_terrain_bounds():
             terminated = True
