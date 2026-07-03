@@ -24,6 +24,7 @@ LEG_GEOMS = (
     ("aux_1_geom", "left_leg_geom", "left_ankle_geom"),
     ("aux_3_geom", "back_leg_geom", "third_ankle_geom"),
 )
+FOOT_GEOM_NAMES = tuple(names[-1] for names in LEG_GEOMS)
 LEG_BODIES = (
     (11, 12, 13),
     (5, 6, 7),
@@ -61,6 +62,10 @@ class DamageAntEnv(AntEnv):
         target_speed: float = 0.25,
         backward_penalty_weight: float = 0.25,
         leg_balance_weight: float = 0.0,
+        foot_gait_weight: float = 0.0,
+        shuffle_penalty_weight: float = 0.0,
+        lateral_penalty_weight: float = 0.0,
+        min_leg_activity_weight: float = 0.0,
         terminate_when_tipped: bool = True,
         min_uprightness: float = 0.45,
         **kwargs,
@@ -78,10 +83,15 @@ class DamageAntEnv(AntEnv):
         self._target_speed = float(target_speed)
         self._backward_penalty_weight = float(backward_penalty_weight)
         self._leg_balance_weight = float(leg_balance_weight)
+        self._foot_gait_weight = float(foot_gait_weight)
+        self._shuffle_penalty_weight = float(shuffle_penalty_weight)
+        self._lateral_penalty_weight = float(lateral_penalty_weight)
+        self._min_leg_activity_weight = float(min_leg_activity_weight)
         self._terminate_when_tipped = bool(terminate_when_tipped)
         self._min_uprightness = float(min_uprightness)
         self._tip_grace_steps = int(kwargs.pop("tip_grace_steps", 80))
         self._steps_since_reset = 0
+        self._prev_foot_contact = np.zeros(N_LEGS, dtype=np.float64)
         self._disabled_legs: list[int] = []
         self._action_mask = np.ones(8, dtype=np.float64)
         self._geom_defaults: dict[int, dict] = {}
@@ -96,6 +106,22 @@ class DamageAntEnv(AntEnv):
         kwargs.setdefault("reset_noise_scale", 0.05)
         super().__init__(**kwargs)
         self._cache_physics_defaults()
+        self._foot_geom_ids = tuple(
+            self.model.geom(name).id for name in FOOT_GEOM_NAMES
+        )
+
+    def _foot_contacts(self) -> np.ndarray:
+        """1.0 per leg if its ankle geom touches any surface this step."""
+        contacts = np.zeros(N_LEGS, dtype=np.float64)
+        for i in range(self.data.ncon):
+            g1 = int(self.data.contact[i].geom1)
+            g2 = int(self.data.contact[i].geom2)
+            for leg_id, gid in enumerate(self._foot_geom_ids):
+                if leg_id in self._disabled_legs:
+                    continue
+                if gid in (g1, g2):
+                    contacts[leg_id] = 1.0
+        return contacts
 
     def _cache_physics_defaults(self):
         for names in LEG_GEOMS:
@@ -193,6 +219,7 @@ class DamageAntEnv(AntEnv):
     def reset_model(self):
         self.set_damage(self._sample_disabled_legs())
         self._steps_since_reset = 0
+        self._prev_foot_contact[:] = 0.0
         super().reset_model()
         self._freeze_amputated_joints()
         if self._disabled_legs:
@@ -203,6 +230,7 @@ class DamageAntEnv(AntEnv):
     def _get_rew(self, x_velocity: float, action):
         uprightness = self._torso_uprightness()
         height = float(self.data.qpos[2])
+        y_velocity = float(self.data.qvel[1])
         u_gate = float(
             np.clip(
                 (uprightness - self._forward_gate_uprightness)
@@ -252,6 +280,40 @@ class DamageAntEnv(AntEnv):
                     * float(np.clip(x_velocity / 0.2, 0.0, 1.0))
                 )
 
+        foot_gait = 0.0
+        foot_contact = self._foot_contacts()
+        if self._foot_gait_weight > 0 and uprightness > 0.75 and x_velocity > 0.04:
+            transitions = 0.0
+            for leg_id in range(N_LEGS):
+                if leg_id in self._disabled_legs:
+                    continue
+                transitions += abs(foot_contact[leg_id] - self._prev_foot_contact[leg_id])
+            foot_gait = self._foot_gait_weight * transitions
+        self._prev_foot_contact[:] = foot_contact
+
+        shuffle_penalty = 0.0
+        if self._shuffle_penalty_weight > 0 and x_velocity > 0.04:
+            low_pose = max(0.0, 0.80 - uprightness) + max(0.0, 0.46 - height)
+            shuffle_penalty = self._shuffle_penalty_weight * x_velocity * low_pose
+
+        lateral_penalty = 0.0
+        if self._lateral_penalty_weight > 0:
+            lateral_penalty = self._lateral_penalty_weight * abs(y_velocity)
+
+        min_leg_activity_penalty = 0.0
+        if self._min_leg_activity_weight > 0 and x_velocity > 0.06 and uprightness > 0.72:
+            for leg_id in range(N_LEGS):
+                if leg_id in self._disabled_legs:
+                    continue
+                leg_speed = 0.0
+                for j in LEG_JOINTS[leg_id]:
+                    dadr = self.model.jnt_dofadr[j]
+                    leg_speed += abs(float(self.data.qvel[dadr]))
+                if leg_speed < 0.10:
+                    min_leg_activity_penalty += self._min_leg_activity_weight * (
+                        0.10 - leg_speed
+                    )
+
         reward = (
             forward_reward
             + healthy_reward
@@ -259,9 +321,13 @@ class DamageAntEnv(AntEnv):
             + height_bonus
             + velocity_tracking
             + leg_balance
+            + foot_gait
             - ctrl_cost
             - contact_cost
             - flop_penalty
+            - shuffle_penalty
+            - lateral_penalty
+            - min_leg_activity_penalty
         )
         reward_info = {
             "reward_forward": forward_reward,
@@ -272,6 +338,10 @@ class DamageAntEnv(AntEnv):
             "reward_height": height_bonus,
             "reward_velocity_tracking": velocity_tracking,
             "reward_leg_balance": leg_balance,
+            "reward_foot_gait": foot_gait,
+            "reward_shuffle_penalty": shuffle_penalty,
+            "reward_lateral_penalty": lateral_penalty,
+            "reward_min_leg_activity_penalty": min_leg_activity_penalty,
             "reward_tilt_penalty": flop_penalty,
             "torso_uprightness": uprightness,
             "upright_gate": gate,
@@ -286,6 +356,7 @@ class DamageAntEnv(AntEnv):
         self._steps_since_reset += 1
         info["disabled_legs"] = list(self._disabled_legs)
         info["torso_uprightness"] = self._torso_uprightness()
+        info["foot_contacts"] = self._foot_contacts().tolist()
         tipped = info["torso_uprightness"] < self._min_uprightness
         if (
             self._terminate_when_tipped

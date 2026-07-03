@@ -39,6 +39,10 @@ def train(cfg: dict):
         "target_speed",
         "backward_penalty_weight",
         "leg_balance_weight",
+        "foot_gait_weight",
+        "shuffle_penalty_weight",
+        "lateral_penalty_weight",
+        "min_leg_activity_weight",
         "reset_noise_scale",
         "min_uprightness",
     ):
@@ -179,6 +183,10 @@ if __name__ == "__main__":
             "damage_final",
             "damage_speed",
             "damage_gait",
+            "damage_holistic",
+            "damage_holistic_v2",
+            "damage_holistic_v3",
+            "damage_upright_polish",
         ],
         default="ant",
     )
@@ -230,6 +238,14 @@ if __name__ == "__main__":
         from configs.ppo_damage_speed import config
     elif args.config == "damage_gait":
         from configs.ppo_damage_gait import config
+    elif args.config == "damage_holistic":
+        from configs.ppo_damage_holistic import config
+    elif args.config == "damage_holistic_v2":
+        from configs.ppo_damage_holistic_v2 import config
+    elif args.config == "damage_holistic_v3":
+        from configs.ppo_damage_holistic_v3 import config
+    elif args.config == "damage_upright_polish":
+        from configs.ppo_damage_upright_polish import config
     else:
         from configs.ppo_ant import config
 
