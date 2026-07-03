@@ -32,6 +32,13 @@ def train(cfg: dict):
         "upright_reward_weight",
         "height_reward_weight",
         "tilt_penalty_weight",
+        "progress_reward_weight",
+        "forward_gate_uprightness",
+        "forward_gate_height",
+        "velocity_tracking_weight",
+        "target_speed",
+        "backward_penalty_weight",
+        "leg_balance_weight",
         "reset_noise_scale",
         "min_uprightness",
     ):
@@ -41,6 +48,8 @@ def train(cfg: dict):
         env_kwargs["terminate_when_tipped"] = cfg["terminate_when_tipped"]
     if "tip_grace_steps" in cfg:
         env_kwargs["tip_grace_steps"] = cfg["tip_grace_steps"]
+    if "min_uprightness" in cfg:
+        env_kwargs["min_uprightness"] = cfg["min_uprightness"]
 
     if "difficulty_range" in cfg:
         env_kwargs["difficulty_range"] = tuple(cfg["difficulty_range"])
@@ -168,6 +177,8 @@ if __name__ == "__main__":
             "damage_upright",
             "damage_polish",
             "damage_final",
+            "damage_speed",
+            "damage_gait",
         ],
         default="ant",
     )
@@ -215,6 +226,10 @@ if __name__ == "__main__":
         from configs.ppo_damage_polish import config
     elif args.config == "damage_final":
         from configs.ppo_damage_final import config
+    elif args.config == "damage_speed":
+        from configs.ppo_damage_speed import config
+    elif args.config == "damage_gait":
+        from configs.ppo_damage_gait import config
     else:
         from configs.ppo_ant import config
 

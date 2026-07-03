@@ -184,12 +184,12 @@ The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to ex
 
 | Metric | Flat-trained | Damage-robust |
 |---|---:|---:|
-| Mean reward | 50 ± 40 | 1990 ± 953 |
+| Mean reward | 44 ± 37 | 2148 ± 749 |
 | Mean steps | 21 | 809 |
 | Fall rate | 100% | 20% |
-| Mean forward velocity | -0.19 m/s | 0.06 m/s |
+| Mean forward velocity | -0.19 m/s | 0.31 m/s |
 
-**Interpretation:** Flat-trained policy tips over on every seed within ~20 steps. Damage-robust policy stays upright on 8/10 seeds and tripod-walks slowly. Velocity is low because forward reward is gated on torso height and uprightness.
+**Interpretation:** Flat-trained policy tips over on every seed within ~20 steps. Damage-robust policy survives on 8/10 seeds at ~0.31 m/s. The gait is an asymmetric tripod shuffle (rear legs mostly planted, front-left pulls forward) — a reward exploit, not a natural quadruped trot, but it shows the flat policy cannot locomote at all after amputation.
 
 **Bug fixed (terrain):** terrain was generated before Gymnasium applied the episode seed, making comparisons non-reproducible. `_randomise_terrain()` now runs inside `reset_model()` after the RNG is seeded.
 

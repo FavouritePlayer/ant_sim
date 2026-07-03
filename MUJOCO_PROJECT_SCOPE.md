@@ -23,19 +23,19 @@
 
 | Metric | Flat-trained | Damage-robust |
 |---|---:|---:|
-| Mean reward | 50 ± 40 | 1990 ± 953 |
+| Mean reward | 44 ± 37 | 2148 ± 749 |
 | Fall rate | 100% | 20% |
 | Mean episode length | 21 steps | 809 steps |
-| Forward velocity | -0.19 m/s | 0.06 m/s |
+| Forward velocity | -0.19 m/s | 0.31 m/s |
 
 ## Resume bullet
 
-> Trained terrain-adapted and damage-robust quadruped policies (PPO, MuJoCo Ant-v5). On unseen heightfield terrain: **893 ± 130** vs **424 ± 106** reward, **30% vs 50%** fall rate. Under front-right leg amputation: **1990 ± 953** vs **50 ± 40** reward, **20% vs 100%** fall rate. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
+> Trained terrain-adapted and damage-robust quadruped policies (PPO, MuJoCo Ant-v5). On unseen heightfield terrain: **893 ± 130** vs **424 ± 106** reward, **30% vs 50%** fall rate. Under front-right leg amputation: **2148 ± 749** vs **44 ± 37** reward, **20% vs 100%** fall rate, **0.31 m/s** tripod locomotion. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
 
 ## Canonical training recipes
 
 | Checkpoint | Config chain |
 |---|---|
 | `checkpoints/terrain/` | `terrain_balanced` |
-| `checkpoints/damage/` | `damage_upright` → `damage_final` |
+| `checkpoints/damage/` | `damage_upright` → `damage_speed` → `damage_gait` |
 | `checkpoints/flat/` | `ant_finetune` |

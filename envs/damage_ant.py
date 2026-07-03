@@ -36,7 +36,7 @@ TORSO_BODY_ID = 1
 
 _ASSET_DIR = os.path.join(os.path.dirname(__file__), "assets")
 DAMAGE_XML = os.path.join(_ASSET_DIR, "ant_damage.xml")
-DAMAGE_CAMERA_CONFIG = {**DEFAULT_CAMERA_CONFIG, "distance": 5.0}
+DAMAGE_CAMERA_CONFIG = {**DEFAULT_CAMERA_CONFIG, "distance": 9.0}
 
 
 class DamageAntEnv(AntEnv):
@@ -54,6 +54,13 @@ class DamageAntEnv(AntEnv):
         upright_reward_weight: float = 2.0,
         height_reward_weight: float = 1.5,
         tilt_penalty_weight: float = 1.0,
+        progress_reward_weight: float = 0.0,
+        forward_gate_uprightness: float = 0.75,
+        forward_gate_height: float = 0.44,
+        velocity_tracking_weight: float = 0.0,
+        target_speed: float = 0.25,
+        backward_penalty_weight: float = 0.25,
+        leg_balance_weight: float = 0.0,
         terminate_when_tipped: bool = True,
         min_uprightness: float = 0.45,
         **kwargs,
@@ -64,6 +71,13 @@ class DamageAntEnv(AntEnv):
         self._upright_reward_weight = float(upright_reward_weight)
         self._height_reward_weight = float(height_reward_weight)
         self._tilt_penalty_weight = float(tilt_penalty_weight)
+        self._progress_reward_weight = float(progress_reward_weight)
+        self._forward_gate_uprightness = float(forward_gate_uprightness)
+        self._forward_gate_height = float(forward_gate_height)
+        self._velocity_tracking_weight = float(velocity_tracking_weight)
+        self._target_speed = float(target_speed)
+        self._backward_penalty_weight = float(backward_penalty_weight)
+        self._leg_balance_weight = float(leg_balance_weight)
         self._terminate_when_tipped = bool(terminate_when_tipped)
         self._min_uprightness = float(min_uprightness)
         self._tip_grace_steps = int(kwargs.pop("tip_grace_steps", 80))
@@ -104,6 +118,18 @@ class DamageAntEnv(AntEnv):
         z_axis = self.data.xmat[TORSO_BODY_ID].reshape(3, 3)[:, 2]
         return float(np.clip(z_axis[2], -1.0, 1.0))
 
+    def _active_leg_joint_speeds(self) -> list[float]:
+        speeds = []
+        for leg_id in range(N_LEGS):
+            if leg_id in self._disabled_legs:
+                continue
+            leg_speed = 0.0
+            for j in LEG_JOINTS[leg_id]:
+                dadr = self.model.jnt_dofadr[j]
+                leg_speed += abs(float(self.data.qvel[dadr]))
+            speeds.append(leg_speed)
+        return speeds
+
     def _restore_leg(self, leg_id: int):
         for name in LEG_GEOMS[leg_id]:
             gid = self.model.geom(name).id
@@ -142,13 +168,15 @@ class DamageAntEnv(AntEnv):
             self._amputate_leg(leg_id)
         self._freeze_amputated_joints()
 
-    def set_damage(self, disabled_legs: list[int]):
+    def set_damage(self, disabled_legs: list[int], *, reset_tip_grace: bool = False):
         self._disabled_legs = [int(i) for i in disabled_legs if 0 <= int(i) < N_LEGS]
         self._action_mask[:] = 1.0
         for leg_id in self._disabled_legs:
             for idx in LEG_ACTUATORS[leg_id]:
                 self._action_mask[idx] = 0.0
         self._apply_amputations()
+        if reset_tip_grace:
+            self._steps_since_reset = 0
 
     def _sample_disabled_legs(self) -> list[int]:
         if self.fixed_disabled_legs is not None:
@@ -175,23 +203,62 @@ class DamageAntEnv(AntEnv):
     def _get_rew(self, x_velocity: float, action):
         uprightness = self._torso_uprightness()
         height = float(self.data.qpos[2])
-        upright_gate = float(np.clip((uprightness - 0.75) / 0.25, 0.0, 1.0))
-        height_gate = float(np.clip((height - 0.44) / 0.12, 0.0, 1.0))
-        gate = upright_gate * height_gate
+        u_gate = float(
+            np.clip(
+                (uprightness - self._forward_gate_uprightness)
+                / max(1e-6, 1.0 - self._forward_gate_uprightness),
+                0.0,
+                1.0,
+            )
+        )
+        h_gate = float(
+            np.clip(
+                (height - self._forward_gate_height) / 0.12,
+                0.0,
+                1.0,
+            )
+        )
+        gate = u_gate * h_gate
 
         forward_reward = x_velocity * self._forward_reward_weight * gate
+        if self._progress_reward_weight > 0 and x_velocity > 0 and uprightness > 0.7:
+            forward_reward += x_velocity * self._progress_reward_weight
+        if x_velocity < 0:
+            forward_reward += x_velocity * self._backward_penalty_weight
+
+        move_factor = float(np.clip(abs(x_velocity) / 0.12, 0.2, 1.0))
         healthy_reward = self.healthy_reward
         ctrl_cost = self.control_cost(action)
         contact_cost = self.contact_cost
-        upright_bonus = self._upright_reward_weight * uprightness
-        height_bonus = self._height_reward_weight * max(0.0, height - 0.48)
+        upright_bonus = self._upright_reward_weight * uprightness * move_factor
+        height_bonus = self._height_reward_weight * max(0.0, height - 0.48) * move_factor
         flop_penalty = self._tilt_penalty_weight * max(0.0, 0.85 - uprightness) ** 2
+
+        velocity_tracking = 0.0
+        if self._velocity_tracking_weight > 0 and uprightness > 0.65:
+            err = x_velocity - self._target_speed
+            velocity_tracking = -self._velocity_tracking_weight * err * err
+
+        leg_balance = 0.0
+        if self._leg_balance_weight > 0 and x_velocity > 0.05 and uprightness > 0.7:
+            leg_speeds = self._active_leg_joint_speeds()
+            if len(leg_speeds) >= 2:
+                mean_speed = float(np.mean(leg_speeds))
+                min_speed = float(np.min(leg_speeds))
+                balance_ratio = min_speed / (mean_speed + 1e-6)
+                leg_balance = (
+                    self._leg_balance_weight
+                    * balance_ratio
+                    * float(np.clip(x_velocity / 0.2, 0.0, 1.0))
+                )
 
         reward = (
             forward_reward
             + healthy_reward
             + upright_bonus
             + height_bonus
+            + velocity_tracking
+            + leg_balance
             - ctrl_cost
             - contact_cost
             - flop_penalty
@@ -203,6 +270,8 @@ class DamageAntEnv(AntEnv):
             "reward_contact": -contact_cost,
             "reward_upright": upright_bonus,
             "reward_height": height_bonus,
+            "reward_velocity_tracking": velocity_tracking,
+            "reward_leg_balance": leg_balance,
             "reward_tilt_penalty": flop_penalty,
             "torso_uprightness": uprightness,
             "upright_gate": gate,

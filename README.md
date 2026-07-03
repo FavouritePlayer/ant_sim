@@ -15,7 +15,7 @@ Train a 4-legged MuJoCo ant to walk on flat ground, procedurally generated rough
 |---|---|---|---|
 | ![Baseline reward curve](docs/assets/ant/reward_curve.png) | ![Terrain reward curve](docs/assets/terrain/reward_curve.png) | ![Terrain comparison](docs/assets/terrain/comparison_plot.png) | ![Damage comparison](docs/assets/damage/comparison_plot.png) |
 
-Videos: [flat demo](docs/assets/ant/demo.mp4) · [terrain demo](docs/assets/terrain/demo.mp4) · [terrain comparison](docs/assets/terrain/comparison_demo.mp4) · [damage comparison](docs/assets/damage/comparison_demo.mp4)
+Videos: [flat demo](docs/assets/ant/demo.mp4) · [terrain demo](docs/assets/terrain/demo.mp4) · [terrain comparison](docs/assets/terrain/comparison_demo.mp4) · [damage comparison](docs/assets/damage/comparison_demo.mp4) · [sudden amputation](docs/assets/damage/sudden_amputation_demo.mp4)
 
 ## Key results
 
@@ -44,16 +44,18 @@ Both policies evaluated on **DamageAnt-v0** with **leg 1 amputated** (front-righ
 
 | Metric | Flat-trained (control) | Damage-robust |
 |---|---:|---:|
-| Mean episode reward | 50 ± 40 | **1990 ± 953** |
+| Mean episode reward | 44 ± 37 | **2148 ± 749** |
 | Mean episode length | 21 steps | **809 steps** |
 | Fall rate | **100%** | **20%** |
-| Mean forward velocity | -0.19 m/s | **0.06 m/s** |
+| Mean forward velocity | -0.19 m/s | **0.31 m/s** |
 
-**Takeaway:** Flat-trained policy tips over immediately. Damage-robust policy stays upright on 8/10 seeds and tripod-walks slowly.
+**Takeaway:** Flat-trained policy tips over on every seed. Damage-robust policy survives on 8/10 seeds with a tripod shuffle gait (~0.31 m/s). Locomotion is asymmetric — the policy exploits velocity rewards by planting rear legs and pulling forward with the front-left — but it demonstrates amputation robustness vs the flat baseline.
 
 ```bash
 python compare_damage.py --disabled-legs 1 --seeds 0 1 2 3 4 5 6 7 8 9
 ```
+
+The sudden-amputation demo (`sudden_amputation_demo.mp4`) starts both ants on **4 legs**, then amputates leg 1 at step 120 (~4 s). Regenerate with `--amputation-step 120`.
 
 ## Training results
 
@@ -61,7 +63,7 @@ python compare_damage.py --disabled-legs 1 --seeds 0 1 2 3 4 5 6 7 8 9
 |---|---|---:|---|
 | Ant-v5 (flat) | 1M fine-tune | **3385** | Shared baseline for both experiments |
 | TerrainAnt-v0 | 3M balanced fine-tune | **994** @ diff 0.4 | `configs/ppo_terrain_balanced.py` |
-| DamageAnt-v0 | upright + final fine-tune | **5477** @ leg 1 out | `damage_upright` → `damage_final` |
+| DamageAnt-v0 | upright → speed → gait polish | **3383** @ leg 1 out | `damage_upright` → `damage_speed` → `damage_gait` |
 
 ## Quick start
 
@@ -72,7 +74,7 @@ pip install -r requirements.txt
 
 python check_env.py
 python train.py --config terrain_balanced
-python train.py --config damage_upright   # then damage_final to reproduce damage checkpoint
+python train.py --config damage_upright   # then damage_speed → damage_gait
 python compare_policies.py
 python compare_damage.py
 python collect_artifacts.py --all
@@ -88,7 +90,7 @@ Committed checkpoints in `checkpoints/` let you run compare/evaluate without ret
 
 ## Resume bullet
 
-> Trained terrain-adapted and damage-robust quadruped policies (PPO, MuJoCo Ant-v5). On unseen heightfield terrain: **893 ± 130** vs **424 ± 106** reward, **30% vs 50%** fall rate. Under front-right leg amputation: **1990 ± 953** vs **50 ± 40** reward, **20% vs 100%** fall rate, **809 vs 21** mean episode steps. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
+> Trained terrain-adapted and damage-robust quadruped policies (PPO, MuJoCo Ant-v5). On unseen heightfield terrain: **893 ± 130** vs **424 ± 106** reward, **30% vs 50%** fall rate. Under front-right leg amputation: **2148 ± 749** vs **44 ± 37** reward, **20% vs 100%** fall rate, **0.31 m/s** tripod locomotion. [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
 
 ## Further reading
 

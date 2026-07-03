@@ -4,7 +4,7 @@
 |---|---|---:|---|
 | `flat/` | Ant-v5 baseline | 3385 | `ant_finetune` |
 | `terrain/` | TerrainAnt-v0 | 994 @ diff 0.4 | `terrain_balanced` |
-| `damage/` | DamageAnt-v0, leg 1 amputated | 5477 | `damage_upright` → `damage_final` |
+| `damage/` | DamageAnt-v0, leg 1 amputated | 3383 | `damage_upright` → `damage_speed` → `damage_gait` |
 
 ```bash
 python compare_policies.py
@@ -16,5 +16,6 @@ Re-train damage checkpoint:
 
 ```bash
 python train.py --config damage_upright
-python train.py --config damage_final
+python train.py --config damage_speed
+python train.py --config damage_gait
 ```

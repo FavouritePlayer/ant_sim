@@ -13,6 +13,7 @@ COMPARISON_FILES = (
     "comparison_plot.png",
     "comparison_reward_by_seed.png",
     "comparison_demo.mp4",
+    "sudden_amputation_demo.mp4",
 )
 
 

@@ -6,6 +6,7 @@ import os
 from dataclasses import asdict, dataclass
 
 import gymnasium as gym
+import mujoco
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,9 @@ from envs.damage_ant import LEG_LABELS
 DEFAULT_FLAT_RUN = default_checkpoint("flat") or "checkpoints/flat"
 DEFAULT_DAMAGE_RUN = default_checkpoint("damage") or "checkpoints/flat"
 DEFAULT_DISABLED_LEGS = [1]
-DEFAULT_VIDEO_SEED = 4
+DEFAULT_VIDEO_SEED = 7
+DEFAULT_AMPUTATION_STEP = 120
+DEMO_CAMERA = {"distance": 9.0, "azimuth": 90.0, "elevation": -18.0}
 
 
 @dataclass
@@ -33,19 +36,38 @@ class EpisodeMetrics:
     disabled_legs: list[int]
 
 
-def make_damage_env(disabled_legs: list[int], render: bool = False):
+def make_damage_env(disabled_legs: list[int], render: bool = False, **kwargs):
     from envs import register
 
     register()
-    kwargs = {"fixed_disabled_legs": list(disabled_legs)}
+    env_kwargs = {"fixed_disabled_legs": list(disabled_legs), **kwargs}
     if render:
-        kwargs.update(
+        env_kwargs.update(
             render_mode="rgb_array",
-            camera_name="track",
             width=640,
             height=480,
         )
-    return gym.make("DamageAnt-v0", **kwargs)
+    return gym.make("DamageAnt-v0", **env_kwargs)
+
+
+def _render_follow(env) -> np.ndarray:
+    """Free camera locked on torso COM — instant tracking, slight forward lead."""
+    renderer = env.unwrapped.mujoco_renderer
+    viewer = renderer._get_viewer(render_mode="rgb_array")
+    cam = viewer.cam
+    torso_id = env.unwrapped.model.body("torso").id
+    target = env.unwrapped.data.subtree_com[torso_id].copy()
+    x_vel = float(env.unwrapped.data.qvel[0])
+    target[0] += float(np.clip(x_vel * 1.2, -0.3, 2.5))
+
+    cam.type = mujoco.mjtCamera.mjCAMERA_FREE
+    cam.fixedcamid = -1
+    cam.lookat[:] = target
+    cam.distance = DEMO_CAMERA["distance"]
+    cam.azimuth = DEMO_CAMERA["azimuth"]
+    cam.elevation = DEMO_CAMERA["elevation"]
+    env.unwrapped.model.vis.global_.fovy = 55.0
+    return viewer.render(render_mode="rgb_array", camera_id=-1)
 
 
 def _damage_caption(disabled_legs: list[int]) -> str:
@@ -185,7 +207,7 @@ def plot_comparison(results: dict, out_path: str):
     print(f"Saved plot: {out_path}")
 
 
-def _label_frame(frame: np.ndarray, title: str, subtitle: str = "", banner_h: int = 52) -> np.ndarray:
+def _label_frame(frame: np.ndarray, title: str, subtitle: str = "", banner_h: int = 48) -> np.ndarray:
     img = Image.fromarray(frame)
     canvas = Image.new("RGB", (img.width, img.height + banner_h), (30, 30, 30))
     canvas.paste(img, (0, banner_h))
@@ -228,7 +250,7 @@ def pick_demo_seed(
                 break
         forward = float(env.unwrapped.data.qpos[0] - x0)
         env.close()
-        score = steps + (500.0 if not fell else 0.0) + forward + 200.0 * max(0.0, min_up)
+        score = steps + (500.0 if not fell else 0.0) + 300.0 * forward + 150.0 * max(0.0, min_up)
         if score > best_score:
             best_score = score
             best_seed = seed
@@ -248,7 +270,13 @@ def record_side_by_side(
     flat_model = PPO.load(os.path.join(flat_run, "best_model", "best_model"))
     damage_model = PPO.load(os.path.join(damage_run, "best_model", "best_model"))
 
-    env_flat = make_damage_env(disabled_legs, render=True)
+    # Flat control: keep stepping after collapse so legs keep flailing (no tip/health kill).
+    env_flat = make_damage_env(
+        disabled_legs,
+        render=True,
+        terminate_when_tipped=False,
+        terminate_when_unhealthy=False,
+    )
     env_damage = make_damage_env(disabled_legs, render=True)
 
     obs_f, _ = env_flat.reset(seed=seed)
@@ -256,21 +284,90 @@ def record_side_by_side(
 
     caption = _damage_caption(disabled_legs)
     frames = []
+
+    for _ in range(max_steps):
+        a_f, _ = flat_model.predict(obs_f, deterministic=True)
+        obs_f, _, _, _, _ = env_flat.step(a_f)
+        frame_f = _render_follow(env_flat)
+
+        a_d, _ = damage_model.predict(obs_d, deterministic=True)
+        obs_d, _, term_d, trunc_d, _ = env_damage.step(a_d)
+        frame_d = _render_follow(env_damage)
+
+        left = _label_frame(frame_f, "Flat-trained (control)", caption)
+        right = _label_frame(frame_d, "Damage-robust (treatment)", caption)
+        frames.append(np.hstack([left, right]))
+
+        if term_d or trunc_d:
+            break
+
+    env_flat.close()
+    env_damage.close()
+
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+    imageio.mimwrite(out_path, frames, fps=fps, macro_block_size=1)
+    print(f"Saved video: {out_path}  ({len(frames)} frames)")
+
+
+def record_sudden_amputation(
+    flat_run: str,
+    damage_run: str,
+    amputation_legs: list[int],
+    amputation_step: int,
+    seed: int,
+    max_steps: int,
+    out_path: str,
+    fps: int = 30,
+):
+    """Record side-by-side demo: both ants walk on 4 legs, then leg(s) amputated mid-episode."""
+    flat_model = PPO.load(os.path.join(flat_run, "best_model", "best_model"))
+    damage_model = PPO.load(os.path.join(damage_run, "best_model", "best_model"))
+
+    env_flat = make_damage_env(
+        [],
+        render=True,
+        fixed_disabled_legs=[],
+        min_disabled_legs=0,
+        max_disabled_legs=0,
+        terminate_when_tipped=False,
+        terminate_when_unhealthy=False,
+    )
+    env_damage = make_damage_env(
+        [],
+        render=True,
+        fixed_disabled_legs=[],
+        min_disabled_legs=0,
+        max_disabled_legs=0,
+    )
+
+    obs_f, _ = env_flat.reset(seed=seed)
+    obs_d, _ = env_damage.reset(seed=seed)
+
+    pre_caption = "4 legs — walking normally"
+    post_caption = _damage_caption(amputation_legs)
+    frames = []
     flat_done = False
     last_flat = None
+    amputated = False
 
     for step_i in range(max_steps):
+        if step_i == amputation_step and not amputated:
+            env_flat.unwrapped.set_damage(amputation_legs, reset_tip_grace=True)
+            env_damage.unwrapped.set_damage(amputation_legs, reset_tip_grace=True)
+            amputated = True
+
         if not flat_done:
             a_f, _ = flat_model.predict(obs_f, deterministic=True)
             obs_f, _, term_f, trunc_f, _ = env_flat.step(a_f)
-            last_flat = env_flat.render()
-            if term_f or trunc_f:
+            last_flat = _render_follow(env_flat)
+            if amputated and (term_f or trunc_f):
                 flat_done = True
 
         a_d, _ = damage_model.predict(obs_d, deterministic=True)
         obs_d, _, term_d, trunc_d, _ = env_damage.step(a_d)
-        frame_d = env_damage.render()
+        frame_d = _render_follow(env_damage)
 
+        caption = post_caption if amputated else pre_caption
         left = _label_frame(
             last_flat if last_flat is not None else frame_d,
             "Flat-trained (control)",
@@ -286,8 +383,8 @@ def record_side_by_side(
     env_damage.close()
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-    imageio.mimwrite(out_path, frames, fps=fps)
-    print(f"Saved video: {out_path}  ({len(frames)} frames)")
+    imageio.mimwrite(out_path, frames, fps=fps, macro_block_size=1)
+    print(f"Saved sudden-amputation video: {out_path}  ({len(frames)} frames)")
 
 
 if __name__ == "__main__":
@@ -300,6 +397,12 @@ if __name__ == "__main__":
     parser.add_argument("--out-dir", default="docs/assets/damage")
     parser.add_argument("--video-seed", type=int, default=None, help="Auto-pick best if omitted")
     parser.add_argument("--no-video", action="store_true")
+    parser.add_argument(
+        "--amputation-step",
+        type=int,
+        default=DEFAULT_AMPUTATION_STEP,
+        help="Simulation step at which leg(s) are amputated in sudden-amputation demo",
+    )
     args = parser.parse_args()
 
     results = compare(
@@ -342,4 +445,13 @@ if __name__ == "__main__":
             video_seed,
             args.max_steps,
             os.path.join(args.out_dir, "comparison_demo.mp4"),
+        )
+        record_sudden_amputation(
+            args.flat_run,
+            args.damage_run,
+            args.disabled_legs,
+            args.amputation_step,
+            video_seed,
+            args.max_steps,
+            os.path.join(args.out_dir, "sudden_amputation_demo.mp4"),
         )
