@@ -39,3 +39,12 @@
 | `checkpoints/terrain/` | `terrain_balanced` |
 | `checkpoints/damage/` | `damage_upright` → `damage_speed` → `damage_gait` |
 | `checkpoints/flat/` | `ant_finetune` |
+
+## Remaining Gaps (priority order)
+
+- [x] Set up replicated canonical terrain/damage training pipeline with multiple training seeds (`replicate_training.py`)
+- [ ] Run and summarize the replicated training sweeps themselves
+- [ ] Expand evaluation beyond one terrain difficulty and one amputated leg
+- [ ] Promote sudden-amputation recovery from demo-only artifact to a first-class reported benchmark
+- [ ] Add automated regression tests for `envs/terrain_ant.py`, `envs/damage_ant.py`, and comparison-script metrics
+- [ ] Clean up config provenance so canonical recipes do not depend on historical `results/` directories

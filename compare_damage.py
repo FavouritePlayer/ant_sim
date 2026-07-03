@@ -1,4 +1,4 @@
-"""Compare flat-trained vs damage-robust policies under leg actuator failure."""
+"""Compare flat-trained vs damage-robust policies under leg amputation."""
 
 import argparse
 import json
@@ -18,7 +18,7 @@ from results_utils import default_checkpoint
 from envs.damage_ant import LEG_LABELS
 
 DEFAULT_FLAT_RUN = default_checkpoint("flat") or "checkpoints/flat"
-DEFAULT_DAMAGE_RUN = default_checkpoint("damage") or "checkpoints/flat"
+DEFAULT_DAMAGE_RUN = default_checkpoint("damage")
 DEFAULT_DISABLED_LEGS = [1]
 DEFAULT_VIDEO_SEED = 7
 DEFAULT_AMPUTATION_STEP = 120
@@ -56,6 +56,33 @@ def make_damage_env(disabled_legs: list[int], render: bool = False, **kwargs):
     if render:
         env.unwrapped.model.vis.global_.fovy = 50.0
     return env
+
+
+def make_sudden_amputation_env(render: bool = False, **kwargs):
+    """Start with all 4 legs intact; amputate later via set_damage()."""
+    return make_damage_env(
+        [],
+        render=render,
+        fixed_disabled_legs=[],
+        min_disabled_legs=0,
+        max_disabled_legs=0,
+        **kwargs,
+    )
+
+
+def _checkpoint_prefix(run_dir: str | None, label: str) -> str:
+    if not run_dir:
+        raise FileNotFoundError(
+            f"No {label} checkpoint configured. Pass --{label}-run explicitly."
+        )
+    prefix = os.path.join(run_dir, "best_model", "best_model")
+    if not os.path.isfile(prefix + ".zip"):
+        raise FileNotFoundError(f"No checkpoint found at {prefix}.zip")
+    return prefix
+
+
+def _load_model(run_dir: str | None, label: str) -> PPO:
+    return PPO.load(_checkpoint_prefix(run_dir, label))
 
 
 def _render_demo(env) -> np.ndarray:
@@ -141,6 +168,29 @@ def summarize(episodes: list[EpisodeMetrics]) -> dict:
     }
 
 
+def _comparison_metrics(flat_s: dict, damage_s: dict) -> dict:
+    flat_vel = float(flat_s["mean_forward_velocity"])
+    damage_vel = float(damage_s["mean_forward_velocity"])
+    velocity_retention_pct = None
+    if flat_vel > 1e-6:
+        velocity_retention_pct = float(100.0 * damage_vel / flat_vel)
+
+    return {
+        "velocity_retention_pct": velocity_retention_pct,
+        "velocity_gain_mps": float(damage_vel - flat_vel),
+        "reward_retention_pct": float(
+            100.0 * damage_s["mean_reward"] / max(flat_s["mean_reward"], 1e-6)
+        ),
+        "reward_gain": float(damage_s["mean_reward"] - flat_s["mean_reward"]),
+        "fall_rate_reduction_pct": float(
+            100.0 * (flat_s["fall_rate"] - damage_s["fall_rate"])
+        ),
+        "episode_length_gain_steps": float(
+            damage_s["mean_steps"] - flat_s["mean_steps"]
+        ),
+    }
+
+
 def compare(
     flat_run: str,
     damage_run: str,
@@ -148,8 +198,8 @@ def compare(
     seeds: list[int],
     max_steps: int = 1000,
 ) -> dict:
-    flat_model = PPO.load(os.path.join(flat_run, "best_model", "best_model"))
-    damage_model = PPO.load(os.path.join(damage_run, "best_model", "best_model"))
+    flat_model = _load_model(flat_run, "flat")
+    damage_model = _load_model(damage_run, "damage")
 
     flat_eps: list[EpisodeMetrics] = []
     damage_eps: list[EpisodeMetrics] = []
@@ -172,12 +222,7 @@ def compare(
 
     flat_s = summarize(flat_eps)
     damage_s = summarize(damage_eps)
-    vel_ret = (
-        100.0 * damage_s["mean_forward_velocity"] / flat_s["mean_forward_velocity"]
-        if flat_s["mean_forward_velocity"] > 1e-6
-        else 0.0
-    )
-    return {
+    results = {
         "disabled_legs": disabled_legs,
         "max_steps": max_steps,
         "seeds": seeds,
@@ -185,11 +230,99 @@ def compare(
         "damage_run": damage_run,
         "flat": {"episodes": [asdict(e) for e in flat_eps], "summary": flat_s},
         "damage": {"episodes": [asdict(e) for e in damage_eps], "summary": damage_s},
-        "velocity_retention_pct": float(vel_ret),
-        "reward_retention_pct": float(
-            100.0 * damage_s["mean_reward"] / max(flat_s["mean_reward"], 1e-6)
-        ),
     }
+    results.update(_comparison_metrics(flat_s, damage_s))
+    return results
+
+
+def rollout_sudden_amputation(
+    model: PPO,
+    env,
+    amputation_legs: list[int],
+    amputation_step: int,
+    seed: int,
+    max_steps: int = 1000,
+) -> EpisodeMetrics:
+    obs, _ = env.reset(seed=seed)
+    x0 = env.unwrapped.data.qpos[0]
+    reward_sum = 0.0
+    fell = False
+    steps = 0
+    disabled: list[int] = []
+
+    for step_i in range(max_steps):
+        if step_i == amputation_step:
+            env.unwrapped.set_damage(amputation_legs, reset_tip_grace=True)
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, terminated, truncated, info = env.step(action)
+        disabled = info.get("disabled_legs", disabled)
+        reward_sum += reward
+        steps += 1
+        if terminated:
+            fell = True
+            break
+        if truncated:
+            break
+
+    dt = steps * env.unwrapped.dt
+    forward = float(env.unwrapped.data.qpos[0] - x0)
+    mean_vel = forward / dt if dt > 0 else 0.0
+    return EpisodeMetrics(
+        seed=seed,
+        reward=float(reward_sum),
+        steps=steps,
+        forward_distance=forward,
+        mean_forward_velocity=mean_vel,
+        fell=fell,
+        disabled_legs=disabled,
+    )
+
+
+def compare_sudden_amputation(
+    flat_run: str,
+    damage_run: str,
+    amputation_legs: list[int],
+    amputation_step: int,
+    seeds: list[int],
+    max_steps: int = 1000,
+) -> dict:
+    flat_model = _load_model(flat_run, "flat")
+    damage_model = _load_model(damage_run, "damage")
+
+    flat_eps: list[EpisodeMetrics] = []
+    damage_eps: list[EpisodeMetrics] = []
+
+    for seed in seeds:
+        env = make_sudden_amputation_env(render=False)
+        flat_eps.append(
+            rollout_sudden_amputation(
+                flat_model, env, amputation_legs, amputation_step, seed, max_steps
+            )
+        )
+        env.close()
+
+        env = make_sudden_amputation_env(render=False)
+        damage_eps.append(
+            rollout_sudden_amputation(
+                damage_model, env, amputation_legs, amputation_step, seed, max_steps
+            )
+        )
+        env.close()
+
+    flat_s = summarize(flat_eps)
+    damage_s = summarize(damage_eps)
+    results = {
+        "disabled_legs": amputation_legs,
+        "amputation_step": amputation_step,
+        "max_steps": max_steps,
+        "seeds": seeds,
+        "flat_run": flat_run,
+        "damage_run": damage_run,
+        "flat": {"episodes": [asdict(e) for e in flat_eps], "summary": flat_s},
+        "damage": {"episodes": [asdict(e) for e in damage_eps], "summary": damage_s},
+    }
+    results.update(_comparison_metrics(flat_s, damage_s))
+    return results
 
 
 def plot_comparison(results: dict, out_path: str):
@@ -230,43 +363,86 @@ def _label_frame(frame: np.ndarray, title: str, subtitle: str = "", banner_h: in
     return np.array(canvas)
 
 
+def _score_demo_seed(
+    model: PPO,
+    disabled_legs: list[int],
+    seed: int,
+    *,
+    max_steps: int = 1000,
+    amputation_step: int | None = None,
+) -> float:
+    if amputation_step is None:
+        env = make_damage_env(disabled_legs, render=False)
+    else:
+        env = make_sudden_amputation_env(render=False)
+
+    obs, _ = env.reset(seed=seed)
+    x0 = env.unwrapped.data.qpos[0]
+    steps = 0
+    fell = False
+    min_up = 1.0
+
+    for step_i in range(max_steps):
+        if amputation_step is not None and step_i == amputation_step:
+            env.unwrapped.set_damage(disabled_legs, reset_tip_grace=True)
+        action, _ = model.predict(obs, deterministic=True)
+        obs, _, terminated, truncated, info = env.step(action)
+        steps += 1
+        min_up = min(min_up, info.get("torso_uprightness", 0.0))
+        if terminated:
+            fell = True
+            break
+        if truncated:
+            break
+
+    forward = float(env.unwrapped.data.qpos[0] - x0)
+    env.close()
+    return steps + (500.0 if not fell else 0.0) + 300.0 * forward + 150.0 * max(0.0, min_up)
+
+
 def pick_demo_seed(
     damage_run: str,
     disabled_legs: list[int],
     candidates: list[int] | None = None,
 ) -> int:
-    """Pick seed with longest survival and best forward distance for the damage policy."""
-    from stable_baselines3 import PPO
-
-    model = PPO.load(os.path.join(damage_run, "best_model", "best_model"))
+    """Pick the best seed for the fixed-amputation comparison demo."""
+    model = _load_model(damage_run, "damage")
     seeds = candidates if candidates is not None else list(range(32))
     best_seed = seeds[0]
     best_score = -1.0
 
     for seed in seeds:
-        env = make_damage_env(disabled_legs, render=False)
-        obs, _ = env.reset(seed=seed)
-        x0 = env.unwrapped.data.qpos[0]
-        steps = 0
-        fell = False
-        min_up = 1.0
-        for _ in range(1000):
-            action, _ = model.predict(obs, deterministic=True)
-            obs, _, terminated, truncated, info = env.step(action)
-            steps += 1
-            min_up = min(min_up, info.get("torso_uprightness", 0.0))
-            if terminated:
-                fell = True
-                break
-            if truncated:
-                break
-        forward = float(env.unwrapped.data.qpos[0] - x0)
-        env.close()
-        score = steps + (500.0 if not fell else 0.0) + 300.0 * forward + 150.0 * max(0.0, min_up)
+        score = _score_demo_seed(model, disabled_legs, seed)
         if score > best_score:
             best_score = score
             best_seed = seed
-    print(f"Demo seed: {best_seed} (score {best_score:.0f})")
+    print(f"Fixed-amputation demo seed: {best_seed} (score {best_score:.0f})")
+    return best_seed
+
+
+def pick_sudden_amputation_seed(
+    damage_run: str,
+    amputation_legs: list[int],
+    amputation_step: int,
+    candidates: list[int] | None = None,
+) -> int:
+    """Pick the best seed for the sudden-amputation demo."""
+    model = _load_model(damage_run, "damage")
+    seeds = candidates if candidates is not None else list(range(32))
+    best_seed = seeds[0]
+    best_score = -1.0
+
+    for seed in seeds:
+        score = _score_demo_seed(
+            model,
+            amputation_legs,
+            seed,
+            amputation_step=amputation_step,
+        )
+        if score > best_score:
+            best_score = score
+            best_seed = seed
+    print(f"Sudden-amputation demo seed: {best_seed} (score {best_score:.0f})")
     return best_seed
 
 
@@ -279,8 +455,8 @@ def record_side_by_side(
     out_path: str,
     fps: int = 30,
 ):
-    flat_model = PPO.load(os.path.join(flat_run, "best_model", "best_model"))
-    damage_model = PPO.load(os.path.join(damage_run, "best_model", "best_model"))
+    flat_model = _load_model(flat_run, "flat")
+    damage_model = _load_model(damage_run, "damage")
 
     # Flat control: keep stepping after collapse so legs keep flailing (no tip/health kill).
     env_flat = make_damage_env(
@@ -333,25 +509,15 @@ def record_sudden_amputation(
     fps: int = 30,
 ):
     """Record side-by-side demo: both ants walk on 4 legs, then leg(s) amputated mid-episode."""
-    flat_model = PPO.load(os.path.join(flat_run, "best_model", "best_model"))
-    damage_model = PPO.load(os.path.join(damage_run, "best_model", "best_model"))
+    flat_model = _load_model(flat_run, "flat")
+    damage_model = _load_model(damage_run, "damage")
 
-    env_flat = make_damage_env(
-        [],
+    env_flat = make_sudden_amputation_env(
         render=True,
-        fixed_disabled_legs=[],
-        min_disabled_legs=0,
-        max_disabled_legs=0,
         terminate_when_tipped=False,
         terminate_when_unhealthy=False,
     )
-    env_damage = make_damage_env(
-        [],
-        render=True,
-        fixed_disabled_legs=[],
-        min_disabled_legs=0,
-        max_disabled_legs=0,
-    )
+    env_damage = make_sudden_amputation_env(render=True)
 
     obs_f, _ = env_flat.reset(seed=seed)
     obs_d, _ = env_damage.reset(seed=seed)
@@ -419,6 +585,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    if args.damage_run is None:
+        parser.error(
+            "No committed damage checkpoint found. Pass --damage-run explicitly."
+        )
+
     results = compare(
         args.flat_run,
         args.damage_run,
@@ -426,11 +597,21 @@ if __name__ == "__main__":
         args.seeds,
         args.max_steps,
     )
+    sudden_results = compare_sudden_amputation(
+        args.flat_run,
+        args.damage_run,
+        args.disabled_legs,
+        args.amputation_step,
+        args.seeds,
+        args.max_steps,
+    )
 
     os.makedirs(args.out_dir, exist_ok=True)
     json_path = os.path.join(args.out_dir, "comparison_results.json")
     with open(json_path, "w") as f:
-        json.dump(results, f, indent=2)
+        payload = dict(results)
+        payload["sudden_amputation"] = sudden_results
+        json.dump(payload, f, indent=2)
     print(f"Saved metrics: {json_path}")
 
     plot_comparison(results, os.path.join(args.out_dir, "comparison_plot.png"))
@@ -446,17 +627,41 @@ if __name__ == "__main__":
         f"Damage-robust    | reward {damage_s['mean_reward']:.0f} | "
         f"vel {damage_s['mean_forward_velocity']:.2f} m/s | fall {damage_s['fall_rate']*100:.0f}%"
     )
-    print(f"Velocity retention: {results['velocity_retention_pct']:.0f}%")
+    if results["velocity_retention_pct"] is None:
+        print(
+            f"Velocity gain: {results['velocity_gain_mps']:+.2f} m/s "
+            "(retention undefined because flat baseline velocity <= 0)"
+        )
+    else:
+        print(f"Velocity retention: {results['velocity_retention_pct']:.0f}%")
+
+    sudden_flat = sudden_results["flat"]["summary"]
+    sudden_damage = sudden_results["damage"]["summary"]
+    print("\n=== Sudden Amputation Summary ===")
+    print(
+        f"Flat-trained     | reward {sudden_flat['mean_reward']:.0f} | "
+        f"vel {sudden_flat['mean_forward_velocity']:.2f} m/s | fall {sudden_flat['fall_rate']*100:.0f}%"
+    )
+    print(
+        f"Damage-robust    | reward {sudden_damage['mean_reward']:.0f} | "
+        f"vel {sudden_damage['mean_forward_velocity']:.2f} m/s | fall {sudden_damage['fall_rate']*100:.0f}%"
+    )
 
     if not args.no_video:
-        video_seed = args.video_seed
-        if video_seed is None:
-            video_seed = pick_demo_seed(args.damage_run, args.disabled_legs)
+        side_by_side_seed = args.video_seed
+        sudden_seed = args.video_seed
+        if side_by_side_seed is None:
+            side_by_side_seed = pick_demo_seed(args.damage_run, args.disabled_legs)
+            sudden_seed = pick_sudden_amputation_seed(
+                args.damage_run,
+                args.disabled_legs,
+                args.amputation_step,
+            )
         record_side_by_side(
             args.flat_run,
             args.damage_run,
             args.disabled_legs,
-            video_seed,
+            side_by_side_seed,
             args.max_steps,
             os.path.join(args.out_dir, "comparison_demo.mp4"),
         )
@@ -465,7 +670,7 @@ if __name__ == "__main__":
             args.damage_run,
             args.disabled_legs,
             args.amputation_step,
-            video_seed,
+            sudden_seed,
             args.max_steps,
             os.path.join(args.out_dir, "sudden_amputation_demo.mp4"),
         )

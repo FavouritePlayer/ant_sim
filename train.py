@@ -2,17 +2,64 @@ import json
 import os
 import time
 import argparse
+import importlib
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import EvalCallback, CallbackList, StopTrainingOnNoModelImprovement
 
+CONFIG_MODULES = {
+    "ant": "configs.ppo_ant",
+    "ant_finetune": "configs.ppo_ant_finetune",
+    "terrain": "configs.ppo_terrain",
+    "terrain_finetune": "configs.ppo_terrain_finetune",
+    "terrain_boost": "configs.ppo_terrain_boost",
+    "terrain_speed": "configs.ppo_terrain_speed",
+    "terrain_speed_refine": "configs.ppo_terrain_speed_refine",
+    "terrain_balanced": "configs.ppo_terrain_balanced",
+    "terrain_diverse": "configs.ppo_terrain_diverse",
+    "terrain_refined": "configs.ppo_terrain_refined",
+    "terrain_polish": "configs.ppo_terrain_polish",
+    "terrain_velocity": "configs.ppo_terrain_velocity",
+    "terrain_velocity_v2": "configs.ppo_terrain_velocity_v2",
+    "damage": "configs.ppo_damage",
+    "damage_boost": "configs.ppo_damage_boost",
+    "damage_retrain": "configs.ppo_damage_retrain",
+    "damage_upright": "configs.ppo_damage_upright",
+    "damage_polish": "configs.ppo_damage_polish",
+    "damage_final": "configs.ppo_damage_final",
+    "damage_speed": "configs.ppo_damage_speed",
+    "damage_gait": "configs.ppo_damage_gait",
+    "damage_holistic": "configs.ppo_damage_holistic",
+    "damage_holistic_v2": "configs.ppo_damage_holistic_v2",
+    "damage_holistic_v3": "configs.ppo_damage_holistic_v3",
+    "damage_upright_polish": "configs.ppo_damage_upright_polish",
+}
 
-def train(cfg: dict):
+
+def _slug(text: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "_" for ch in text).strip("_")
+
+
+def load_config(config_name: str) -> dict:
+    module = importlib.import_module(CONFIG_MODULES[config_name])
+    return module.config.copy()
+
+
+def train(cfg: dict, *, config_name: str | None = None, run_tag: str | None = None) -> str:
     from envs import register
     register()
 
-    run_name = f"ppo_{cfg['env_id'].lower().replace('-', '_')}_{int(time.time())}"
+    cfg = cfg.copy()
+    if config_name:
+        cfg["config_name"] = config_name
+    timestamp = int(time.time())
+    run_name = f"ppo_{cfg['env_id'].lower().replace('-', '_')}_{timestamp}"
+    if "seed" in cfg:
+        run_name += f"_seed{cfg['seed']}"
+    if run_tag:
+        cfg["run_tag"] = run_tag
+        run_name += f"_{_slug(run_tag)}"
     log_dir = os.path.join("results", run_name)
     os.makedirs(log_dir, exist_ok=True)
 
@@ -91,22 +138,23 @@ def train(cfg: dict):
             ent_coef=cfg["ent_coef"],
             tensorboard_log=os.path.join("results", "tb_logs"),
         )
+        model.set_random_seed(cfg["seed"])
     else:
         model = PPO(
-        policy=cfg["policy"],
-        env=env,
-        learning_rate=cfg["learning_rate"],
-        n_steps=cfg["n_steps"],
-        batch_size=cfg["batch_size"],
-        n_epochs=cfg["n_epochs"],
-        gamma=cfg["gamma"],
-        gae_lambda=cfg["gae_lambda"],
-        clip_range=cfg["clip_range"],
-        ent_coef=cfg["ent_coef"],
-        vf_coef=cfg["vf_coef"],
-        max_grad_norm=cfg["max_grad_norm"],
-        tensorboard_log=os.path.join("results", "tb_logs"),
-        seed=cfg["seed"],
+            policy=cfg["policy"],
+            env=env,
+            learning_rate=cfg["learning_rate"],
+            n_steps=cfg["n_steps"],
+            batch_size=cfg["batch_size"],
+            n_epochs=cfg["n_epochs"],
+            gamma=cfg["gamma"],
+            gae_lambda=cfg["gae_lambda"],
+            clip_range=cfg["clip_range"],
+            ent_coef=cfg["ent_coef"],
+            vf_coef=cfg["vf_coef"],
+            max_grad_norm=cfg["max_grad_norm"],
+            tensorboard_log=os.path.join("results", "tb_logs"),
+            seed=cfg["seed"],
             verbose=1,
         )
 
@@ -155,39 +203,14 @@ def train(cfg: dict):
 
     env.close()
     eval_env.close()
+    return log_dir
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config",
-        choices=[
-            "ant",
-            "ant_finetune",
-            "terrain",
-            "terrain_finetune",
-            "terrain_boost",
-            "terrain_speed",
-            "terrain_speed_refine",
-            "terrain_balanced",
-            "terrain_diverse",
-            "terrain_refined",
-            "terrain_polish",
-            "terrain_velocity",
-            "terrain_velocity_v2",
-            "damage",
-            "damage_boost",
-            "damage_retrain",
-            "damage_upright",
-            "damage_polish",
-            "damage_final",
-            "damage_speed",
-            "damage_gait",
-            "damage_holistic",
-            "damage_holistic_v2",
-            "damage_holistic_v3",
-            "damage_upright_polish",
-        ],
+        choices=sorted(CONFIG_MODULES.keys()),
         default="ant",
     )
     parser.add_argument("--timesteps", type=int, default=None)
@@ -196,63 +219,20 @@ if __name__ == "__main__":
         default=None,
         help="Path to a .zip model to fine-tune (overrides config pretrained_path)",
     )
+    parser.add_argument("--seed", type=int, default=None, help="Override config seed")
+    parser.add_argument(
+        "--run-tag",
+        default=None,
+        help="Optional suffix to label this run (useful for replication groups)",
+    )
     args = parser.parse_args()
 
-    if args.config == "ant_finetune":
-        from configs.ppo_ant_finetune import config
-    elif args.config == "terrain":
-        from configs.ppo_terrain import config
-    elif args.config == "terrain_finetune":
-        from configs.ppo_terrain_finetune import config
-    elif args.config == "terrain_boost":
-        from configs.ppo_terrain_boost import config
-    elif args.config == "terrain_speed":
-        from configs.ppo_terrain_speed import config
-    elif args.config == "terrain_speed_refine":
-        from configs.ppo_terrain_speed_refine import config
-    elif args.config == "terrain_balanced":
-        from configs.ppo_terrain_balanced import config
-    elif args.config == "terrain_diverse":
-        from configs.ppo_terrain_diverse import config
-    elif args.config == "terrain_refined":
-        from configs.ppo_terrain_refined import config
-    elif args.config == "terrain_polish":
-        from configs.ppo_terrain_polish import config
-    elif args.config == "terrain_velocity":
-        from configs.ppo_terrain_velocity import config
-    elif args.config == "terrain_velocity_v2":
-        from configs.ppo_terrain_velocity_v2 import config
-    elif args.config == "damage":
-        from configs.ppo_damage import config
-    elif args.config == "damage_boost":
-        from configs.ppo_damage_boost import config
-    elif args.config == "damage_retrain":
-        from configs.ppo_damage_retrain import config
-    elif args.config == "damage_upright":
-        from configs.ppo_damage_upright import config
-    elif args.config == "damage_polish":
-        from configs.ppo_damage_polish import config
-    elif args.config == "damage_final":
-        from configs.ppo_damage_final import config
-    elif args.config == "damage_speed":
-        from configs.ppo_damage_speed import config
-    elif args.config == "damage_gait":
-        from configs.ppo_damage_gait import config
-    elif args.config == "damage_holistic":
-        from configs.ppo_damage_holistic import config
-    elif args.config == "damage_holistic_v2":
-        from configs.ppo_damage_holistic_v2 import config
-    elif args.config == "damage_holistic_v3":
-        from configs.ppo_damage_holistic_v3 import config
-    elif args.config == "damage_upright_polish":
-        from configs.ppo_damage_upright_polish import config
-    else:
-        from configs.ppo_ant import config
-
-    cfg = config.copy()
+    cfg = load_config(args.config)
     if args.timesteps:
         cfg["total_timesteps"] = args.timesteps
     if args.pretrained:
         cfg["pretrained_path"] = args.pretrained
+    if args.seed is not None:
+        cfg["seed"] = args.seed
 
-    train(cfg)
+    train(cfg, config_name=args.config, run_tag=args.run_tag)

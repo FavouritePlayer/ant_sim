@@ -35,7 +35,7 @@ This repo ships **two** control-vs-treatment comparisons against the same flat-t
 
 Both use the same PPO stack and the same experimental framing: hold the test environment and seeds constant, swap only the policy.
 
-**Terrain** is the dramatic result — flat-trained policy falls 100% of the time on rough ground. **Leg damage** is subtler — Ant-v5 does not collapse with one leg out, but damage-trained locomotion is faster and more seed-stable.
+**Terrain** is the dramatic result — on the shipped 10-seed benchmark at difficulty 0.4, the flat-trained policy falls on 50% of rollouts while the terrain-trained policy falls on 30%. **Leg damage** is subtler — the damage-trained policy is much more stable than the flat baseline under amputation, but the gait is still an asymmetric tripod shuffle rather than a natural trot.
 
 ### DamageAnt-v0 — leg amputation
 
@@ -170,7 +170,7 @@ The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to ex
 | Mean forward distance | 3.8 m | 3.9 m |
 | Mean forward velocity | 0.22 m/s | 0.10 m/s |
 
-**Interpretation:** The flat policy always falls. The terrain-adapted policy survives most episodes but locomotes cautiously on hills.
+**Interpretation:** The flat policy is clearly less robust and falls on half the matched-seed rollouts. The terrain-adapted policy survives most episodes but locomotes cautiously on hills.
 
 ### Leg damage (`compare_damage.py`)
 
@@ -190,6 +190,8 @@ The `CurriculumCallback` code remains in `envs/terrain_ant.py` if you want to ex
 | Mean forward velocity | -0.19 m/s | 0.31 m/s |
 
 **Interpretation:** Flat-trained policy tips over on every seed within ~20 steps. Damage-robust policy survives on 8/10 seeds at ~0.31 m/s. The gait is an asymmetric tripod shuffle (rear legs mostly planted, front-left pulls forward) — a reward exploit, not a natural quadruped trot, but it shows the flat policy cannot locomote at all after amputation.
+
+**Sudden amputation is harder:** the repo also ships a side-by-side demo where both ants start on 4 legs and leg 1 is removed at step 120. That scenario is useful for visualization, but it should be treated as a separate recovery benchmark from the fixed-amputation result.
 
 **Bug fixed (terrain):** terrain was generated before Gymnasium applied the episode seed, making comparisons non-reproducible. `_randomise_terrain()` now runs inside `reset_model()` after the RNG is seeded.
 
