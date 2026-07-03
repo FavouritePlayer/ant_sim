@@ -36,7 +36,7 @@ TORSO_BODY_ID = 1
 
 _ASSET_DIR = os.path.join(os.path.dirname(__file__), "assets")
 DAMAGE_XML = os.path.join(_ASSET_DIR, "ant_damage.xml")
-DAMAGE_CAMERA_CONFIG = {**DEFAULT_CAMERA_CONFIG, "distance": 9.0}
+DAMAGE_CAMERA_CONFIG = {**DEFAULT_CAMERA_CONFIG, "distance": 5.5}
 
 
 class DamageAntEnv(AntEnv):

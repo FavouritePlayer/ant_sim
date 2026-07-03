@@ -22,7 +22,7 @@ DEFAULT_DAMAGE_RUN = default_checkpoint("damage") or "checkpoints/flat"
 DEFAULT_DISABLED_LEGS = [1]
 DEFAULT_VIDEO_SEED = 7
 DEFAULT_AMPUTATION_STEP = 120
-DEMO_CAMERA = {"distance": 9.0, "azimuth": 90.0, "elevation": -18.0}
+DEMO_CAMERA_NAME = "demo"
 
 
 @dataclass
@@ -50,24 +50,14 @@ def make_damage_env(disabled_legs: list[int], render: bool = False, **kwargs):
     return gym.make("DamageAnt-v0", **env_kwargs)
 
 
-def _render_follow(env) -> np.ndarray:
-    """Free camera locked on torso COM — instant tracking, slight forward lead."""
+def _render_demo(env) -> np.ndarray:
+    """Use the XML trackcom camera — stable framing without manual lookat jitter."""
     renderer = env.unwrapped.mujoco_renderer
     viewer = renderer._get_viewer(render_mode="rgb_array")
-    cam = viewer.cam
-    torso_id = env.unwrapped.model.body("torso").id
-    target = env.unwrapped.data.subtree_com[torso_id].copy()
-    x_vel = float(env.unwrapped.data.qvel[0])
-    target[0] += float(np.clip(x_vel * 1.2, -0.3, 2.5))
-
-    cam.type = mujoco.mjtCamera.mjCAMERA_FREE
-    cam.fixedcamid = -1
-    cam.lookat[:] = target
-    cam.distance = DEMO_CAMERA["distance"]
-    cam.azimuth = DEMO_CAMERA["azimuth"]
-    cam.elevation = DEMO_CAMERA["elevation"]
-    env.unwrapped.model.vis.global_.fovy = 55.0
-    return viewer.render(render_mode="rgb_array", camera_id=-1)
+    cam_id = mujoco.mj_name2id(
+        env.unwrapped.model, mujoco.mjtObj.mjOBJ_CAMERA, DEMO_CAMERA_NAME
+    )
+    return viewer.render(render_mode="rgb_array", camera_id=cam_id)
 
 
 def _damage_caption(disabled_legs: list[int]) -> str:
@@ -288,11 +278,11 @@ def record_side_by_side(
     for _ in range(max_steps):
         a_f, _ = flat_model.predict(obs_f, deterministic=True)
         obs_f, _, _, _, _ = env_flat.step(a_f)
-        frame_f = _render_follow(env_flat)
+        frame_f = _render_demo(env_flat)
 
         a_d, _ = damage_model.predict(obs_d, deterministic=True)
         obs_d, _, term_d, trunc_d, _ = env_damage.step(a_d)
-        frame_d = _render_follow(env_damage)
+        frame_d = _render_demo(env_damage)
 
         left = _label_frame(frame_f, "Flat-trained (control)", caption)
         right = _label_frame(frame_d, "Damage-robust (treatment)", caption)
@@ -359,13 +349,13 @@ def record_sudden_amputation(
         if not flat_done:
             a_f, _ = flat_model.predict(obs_f, deterministic=True)
             obs_f, _, term_f, trunc_f, _ = env_flat.step(a_f)
-            last_flat = _render_follow(env_flat)
+            last_flat = _render_demo(env_flat)
             if amputated and (term_f or trunc_f):
                 flat_done = True
 
         a_d, _ = damage_model.predict(obs_d, deterministic=True)
         obs_d, _, term_d, trunc_d, _ = env_damage.step(a_d)
-        frame_d = _render_follow(env_damage)
+        frame_d = _render_demo(env_damage)
 
         caption = post_caption if amputated else pre_caption
         left = _label_frame(
