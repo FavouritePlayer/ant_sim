@@ -5,6 +5,7 @@ These are the **canonical, committed** checkpoints used by the README metrics an
 - `flat/` — shared flat-ground baseline
 - `terrain/` — canonical terrain-adapted policy used in `compare_policies.py`
 - `damage/` — canonical fixed-amputation damage policy used in `compare_damage.py`
+- `replications/` — tracked handoff checkpoints copied out of `results/` for cross-machine resume
 
 ## Important provenance note
 
@@ -17,6 +18,11 @@ If you want the repo's headline results from a fresh clone, use:
 - committed checkpoints in this directory
 - `docs/assets/terrain/` and `docs/assets/damage/`
 - `compare_policies.py` and `compare_damage.py`
+
+If you want to resume interrupted multi-seed training on another machine, check:
+
+- `current_instructions.md`
+- `checkpoints/replications/`
 
 ## Canonical recipes
 

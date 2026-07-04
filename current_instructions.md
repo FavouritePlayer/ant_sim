@@ -2,37 +2,40 @@
 
 ## Current state
 
-The long replication run was **intentionally stopped after a clean checkpoint boundary** so work can continue later on this machine or another computer.
-
-The last clean completed stage is:
+The replication run was stopped intentionally. The newest **clean completed** checkpoint is now:
 
 - profile: `terrain_canonical`
-- seed: `0`
-- completed stage: `terrain_boost`
+- seed: `1`
+- completed stage: `terrain_balanced`
 
-Clean resume checkpoint:
+Tracked resume checkpoint in the repo:
 
-- `results/ppo_terrainant_v0_1783110751_seed0_replicate_terrain_canonical_terrain_boost/best_model/best_model.zip`
+- `checkpoints/replications/terrain_seed1_balanced/best_model/best_model.zip`
 
-Replication manifest from the interrupted run:
+Source run for that tracked checkpoint:
 
-- `results/replications/replication_1783104843_full_seed_sweeps.json`
+- `results/ppo_terrainant_v0_1783136920_seed1_replicate_terrain_canonical_terrain_balanced/`
 
-Note: that manifest still shows `terrain_balanced` for seed `0` as `"running"` because the Python process was stopped manually after the clean `terrain_boost` save. Treat that partial `terrain_balanced` work as discarded. Resume from the `terrain_boost` checkpoint above.
+Relevant manifests:
+
+- earlier interrupted batch: `results/replications/replication_1783104843_full_seed_sweeps.json`
+- later terrain-only batch: `results/replications/replication_1783127241_remaining_terrain_seeds.json`
+
+Important note about the final stopped work:
+
+- `terrain_canonical`, seed `2`, `terrain_finetune` had started but was stopped manually mid-stage
+- treat that partial seed-2 work as discarded
+- resume from the tracked seed-1 checkpoint above, not from the interrupted seed-2 run
 
 ## Important GitHub note
 
-The checkpoint above is **not on GitHub** because it lives under `results/`, which is gitignored.
+The recommended resume checkpoint is now copied into a **tracked** path under `checkpoints/replications/`, so after pulling this commit on another machine you can resume directly from GitHub without manually transferring `results/`.
 
-If resuming on another computer, you must manually transfer:
-
-- the whole repo, or at minimum
-- `results/ppo_terrainant_v0_1783110751_seed0_replicate_terrain_canonical_terrain_boost/`
-- `results/replications/replication_1783104843_full_seed_sweeps.json`
+The historical `results/` directories and manifests are still useful for provenance, but they are not required for the basic resume path below.
 
 ## Resume options
 
-### Option A — continue manually from the clean checkpoint
+### Option A — continue manually from the tracked checkpoint
 
 Run this from the repo root:
 
@@ -41,18 +44,17 @@ source .venv/bin/activate
 
 python train.py \
   --config terrain_balanced \
-  --seed 0 \
-  --pretrained "results/ppo_terrainant_v0_1783110751_seed0_replicate_terrain_canonical_terrain_boost/best_model/best_model" \
-  --run-tag replicate_terrain_canonical_terrain_balanced
+  --seed 1 \
+  --pretrained "checkpoints/replications/terrain_seed1_balanced/best_model/best_model" \
+  --run-tag resume_from_tracked_seed1_balanced
 ```
 
-When that finishes, continue the remaining staged replications manually:
+That command resumes from the latest clean replicated terrain checkpoint that is now stored in the repo.
 
-1. `terrain_canonical`, seed `1`
-2. `terrain_canonical`, seed `2`
-3. `damage_canonical`, seed `0`
-4. `damage_canonical`, seed `1`
-5. `damage_canonical`, seed `2`
+If your goal is to continue the broader replication campaign, the next unfinished work is:
+
+1. rerun `terrain_canonical`, seed `2` from the start of that seed chain
+2. then run `damage_canonical`, seeds `0`, `1`, `2`
 
 ### Option B — use the existing replication runner as a checklist
 
@@ -60,25 +62,27 @@ When that finishes, continue the remaining staged replications manually:
 
 So for now:
 
-1. use the checkpoint above to finish `terrain_balanced` for seed `0`
+1. use the tracked checkpoint above as the clean resume base
 2. then either:
    - launch new one-off `train.py` commands for the remaining stages/seeds, or
    - extend `replicate_training.py` later with manifest-resume support before restarting a large batch
+3. if you want a simple pull-and-run workflow on the Mac mini, prefer the tracked checkpoint path under `checkpoints/replications/`
 
 ## Useful context
 
-- Last fully completed seed-stage chain:
-  - `terrain_finetune` seed `0` completed
-  - `terrain_boost` seed `0` completed
+- Fully completed terrain seeds:
+  - `terrain_canonical` seed `0`
+  - `terrain_canonical` seed `1`
+- Interrupted and should be treated as incomplete:
+  - `terrain_canonical` seed `2` during `terrain_finetune`
 - Not started yet:
-  - `terrain_canonical` seeds `1`, `2`
   - all `damage_canonical` seeds `0`, `1`, `2`
 
 ## Recommended next step
 
 On the destination machine:
 
-1. copy the repo and the required `results/` checkpoint folder
+1. pull the repo on the Mac mini
 2. recreate/activate the virtualenv
-3. run the `terrain_balanced` resume command above
+3. run the `terrain_balanced` resume command above using the tracked checkpoint in `checkpoints/replications/`
 4. only after the replicated training is complete, run the broadened evaluation sweeps
