@@ -8,3 +8,4 @@ terrain_preview*.png
 checkpoints/*/demo.mp4
 *.log
 MUJOCO_LOG.TXT
+.cursor/

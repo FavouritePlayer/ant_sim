@@ -1,0 +1,147 @@
+{
+  "created_at": "2026-07-06T00:37:26Z",
+  "flat_run": "checkpoints/flat",
+  "crossleg_run": "results/ppo_damageant_v0_1783295334_seed0_replicate_damage_crossleg_crossleg_gait",
+  "crossleg_final_runs": {
+    "0": "results/ppo_damageant_v0_1783295334_seed0_replicate_damage_crossleg_crossleg_gait",
+    "1": "results/ppo_damageant_v0_1783296345_seed1_replicate_damage_crossleg_crossleg_gait",
+    "2": "results/ppo_damageant_v0_1783298003_seed2_replicate_damage_crossleg_crossleg_gait"
+  },
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "max_steps": 1000,
+  "legs": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "by_leg": {
+    "0": {
+      "leg_id": 0,
+      "leg_label": "back right",
+      "out_dir": "docs/assets/damage/crossleg/leg_0",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 146.49800105662797,
+        "std_reward": 75.79678161556524,
+        "mean_steps": 66.5,
+        "std_steps": 24.01353784847206,
+        "mean_forward_distance": 0.6849454555519602,
+        "std_forward_distance": 0.7718007604509992,
+        "mean_forward_velocity": 0.1998081211860755,
+        "std_forward_velocity": 0.25891539670990377,
+        "fall_rate": 1.0
+      },
+      "crossleg_summary": {
+        "n_episodes": 10,
+        "mean_reward": 1491.4895236640211,
+        "std_reward": 867.8628426444495,
+        "mean_steps": 601.1,
+        "std_steps": 358.11630792244017,
+        "mean_forward_distance": 5.224875854083278,
+        "std_forward_distance": 3.2770506539925184,
+        "mean_forward_velocity": 0.19694299837502152,
+        "std_forward_velocity": 0.09060682636346942,
+        "fall_rate": 0.6
+      }
+    },
+    "1": {
+      "leg_id": 1,
+      "leg_label": "front right",
+      "out_dir": "docs/assets/damage/crossleg/leg_1",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 72.01112277978099,
+        "std_reward": 119.97106739315751,
+        "mean_steps": 31.4,
+        "std_steps": 51.93110821078248,
+        "mean_forward_distance": 0.04184145970836071,
+        "std_forward_distance": 0.6393881318050507,
+        "mean_forward_velocity": -0.19893815345450042,
+        "std_forward_velocity": 0.23651123972384813,
+        "fall_rate": 1.0
+      },
+      "crossleg_summary": {
+        "n_episodes": 10,
+        "mean_reward": 94.40804294331495,
+        "std_reward": 74.32469871322625,
+        "mean_steps": 43.0,
+        "std_steps": 34.00882238478716,
+        "mean_forward_distance": 0.05522261928324575,
+        "std_forward_distance": 0.3122500744557269,
+        "mean_forward_velocity": 0.027124877320394425,
+        "std_forward_velocity": 0.23183484407863536,
+        "fall_rate": 1.0
+      }
+    },
+    "2": {
+      "leg_id": 2,
+      "leg_label": "front left",
+      "out_dir": "docs/assets/damage/crossleg/leg_2",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 85.4386436250307,
+        "std_reward": 40.89501706451451,
+        "mean_steps": 30.0,
+        "std_steps": 13.92838827718412,
+        "mean_forward_distance": 1.2710853220782172,
+        "std_forward_distance": 0.8354053154981756,
+        "mean_forward_velocity": 0.886092778628947,
+        "std_forward_velocity": 0.48674022916082244,
+        "fall_rate": 1.0
+      },
+      "crossleg_summary": {
+        "n_episodes": 10,
+        "mean_reward": 304.68092639931683,
+        "std_reward": 255.23985373554942,
+        "mean_steps": 111.1,
+        "std_steps": 84.75547179976051,
+        "mean_forward_distance": 2.97132767417778,
+        "std_forward_distance": 3.4445696152718224,
+        "mean_forward_velocity": 0.37250611147157314,
+        "std_forward_velocity": 0.5885445734160101,
+        "fall_rate": 1.0
+      }
+    },
+    "3": {
+      "leg_id": 3,
+      "leg_label": "back left",
+      "out_dir": "docs/assets/damage/crossleg/leg_3",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 53.91705884267152,
+        "std_reward": 42.888585495223936,
+        "mean_steps": 28.2,
+        "std_steps": 20.375475454575287,
+        "mean_forward_distance": 0.7513903714690783,
+        "std_forward_distance": 0.6229906066841309,
+        "mean_forward_velocity": 0.5757446814759042,
+        "std_forward_velocity": 0.30715299267273044,
+        "fall_rate": 1.0
+      },
+      "crossleg_summary": {
+        "n_episodes": 10,
+        "mean_reward": 99.31973285276646,
+        "std_reward": 28.352908551721487,
+        "mean_steps": 37.9,
+        "std_steps": 15.769908052997645,
+        "mean_forward_distance": 1.2759488842621312,
+        "std_forward_distance": 0.5664067409820018,
+        "mean_forward_velocity": 0.6771268468665359,
+        "std_forward_velocity": 0.23503264638566923,
+        "fall_rate": 1.0
+      }
+    }
+  }
+}

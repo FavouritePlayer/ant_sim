@@ -1,4 +1,5 @@
-# Refine speed model: train at eval difficulty to cut fall rate while keeping forward motion.
+# Refine speed model: start from the committed terrain checkpoint and train at eval
+# difficulty to cut fall rate while keeping forward motion.
 
 config = {
     "env_id": "TerrainAnt-v0",
@@ -19,5 +20,5 @@ config = {
     "difficulty": 0.4,
     "forward_reward_weight": 2.2,
     "ctrl_cost_weight": 0.42,
-    "pretrained_path": "results/ppo_terrainant_v0_1782945141/best_model/best_model",
+    "pretrained_path": "checkpoints/terrain/best_model/best_model",
 }

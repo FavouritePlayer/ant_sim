@@ -1,4 +1,5 @@
-# Balanced fine-tune: stable boost checkpoint + moderate forward reward, trained/evaluated at test difficulty.
+# Balanced fine-tune: use the committed terrain checkpoint as a reproducible parent,
+# then train/evaluate at test difficulty with a moderate forward reward.
 
 config = {
     "env_id": "TerrainAnt-v0",
@@ -21,5 +22,5 @@ config = {
     "n_eval_episodes": 10,
     "forward_reward_weight": 2.0,
     "ctrl_cost_weight": 0.45,
-    "pretrained_path": "results/ppo_terrainant_v0_1782867891/best_model/best_model",
+    "pretrained_path": "checkpoints/terrain/best_model/best_model",
 }

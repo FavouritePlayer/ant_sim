@@ -58,6 +58,22 @@ REPLICATION_PROFILES: dict[str, ProfileSpec] = {
             StageSpec(name="damage_gait", config_name="damage_gait"),
         ),
     ),
+    "damage_crossleg": ProfileSpec(
+        name="damage_crossleg",
+        description=(
+            "Flat baseline -> cross-leg upright -> cross-leg speed -> cross-leg gait. "
+            "Each episode randomly amputates one leg during training."
+        ),
+        stages=(
+            StageSpec(
+                name="crossleg_upright",
+                config_name="damage_crossleg_upright",
+                pretrained_path="checkpoints/flat/best_model/best_model",
+            ),
+            StageSpec(name="crossleg_speed", config_name="damage_crossleg_speed"),
+            StageSpec(name="crossleg_gait", config_name="damage_crossleg_gait"),
+        ),
+    ),
 }
 
 

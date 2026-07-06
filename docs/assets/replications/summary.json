@@ -1,0 +1,408 @@
+{
+  "created_at": "2026-07-06T01:46:32Z",
+  "entries": [
+    {
+      "profile": "damage_canonical",
+      "seed": 0,
+      "final_run_dir": "results/ppo_damageant_v0_1783161704_seed0_replicate_damage_canonical_damage_gait",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 1500000,
+        "mean_reward": 2394.1566481999994,
+        "std_reward": 1506.692496264656,
+        "n_eval_episodes": 15
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783160443_overnight_damage_seed0.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_damageant_v0_1783161704_seed0_replicate_damage_canonical_damage_gait",
+        "stages": [
+          {
+            "name": "damage_upright",
+            "config_name": "damage_upright",
+            "seed": 0,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783160443_seed0_replicate_damage_canonical_damage_upright",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783160443_seed0_replicate_damage_canonical_damage_upright/best_model/best_model"
+          },
+          {
+            "name": "damage_speed",
+            "config_name": "damage_speed",
+            "seed": 0,
+            "pretrained_path": "results/ppo_damageant_v0_1783160443_seed0_replicate_damage_canonical_damage_upright/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783160968_seed0_replicate_damage_canonical_damage_speed",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783160968_seed0_replicate_damage_canonical_damage_speed/best_model/best_model"
+          },
+          {
+            "name": "damage_gait",
+            "config_name": "damage_gait",
+            "seed": 0,
+            "pretrained_path": "results/ppo_damageant_v0_1783160968_seed0_replicate_damage_canonical_damage_speed/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783161704_seed0_replicate_damage_canonical_damage_gait",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783161704_seed0_replicate_damage_canonical_damage_gait/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "damage_canonical",
+      "seed": 1,
+      "final_run_dir": "results/ppo_damageant_v0_1783163648_seed1_replicate_damage_canonical_damage_gait",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 1500000,
+        "mean_reward": 3300.410565333334,
+        "std_reward": 1528.767069087815,
+        "n_eval_episodes": 15
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783162160_overnight_damage_seed1.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_damageant_v0_1783163648_seed1_replicate_damage_canonical_damage_gait",
+        "stages": [
+          {
+            "name": "damage_upright",
+            "config_name": "damage_upright",
+            "seed": 1,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783162160_seed1_replicate_damage_canonical_damage_upright",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783162160_seed1_replicate_damage_canonical_damage_upright/best_model/best_model"
+          },
+          {
+            "name": "damage_speed",
+            "config_name": "damage_speed",
+            "seed": 1,
+            "pretrained_path": "results/ppo_damageant_v0_1783162160_seed1_replicate_damage_canonical_damage_upright/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783162866_seed1_replicate_damage_canonical_damage_speed",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783162866_seed1_replicate_damage_canonical_damage_speed/best_model/best_model"
+          },
+          {
+            "name": "damage_gait",
+            "config_name": "damage_gait",
+            "seed": 1,
+            "pretrained_path": "results/ppo_damageant_v0_1783162866_seed1_replicate_damage_canonical_damage_speed/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783163648_seed1_replicate_damage_canonical_damage_gait",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783163648_seed1_replicate_damage_canonical_damage_gait/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "damage_canonical",
+      "seed": 2,
+      "final_run_dir": "results/ppo_damageant_v0_1783165386_seed2_replicate_damage_canonical_damage_gait",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 1150000,
+        "mean_reward": 2478.8220819999997,
+        "std_reward": 1690.9895464873964,
+        "n_eval_episodes": 15
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783164085_overnight_damage_seed2.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_damageant_v0_1783165386_seed2_replicate_damage_canonical_damage_gait",
+        "stages": [
+          {
+            "name": "damage_upright",
+            "config_name": "damage_upright",
+            "seed": 2,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783164085_seed2_replicate_damage_canonical_damage_upright",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783164085_seed2_replicate_damage_canonical_damage_upright/best_model/best_model"
+          },
+          {
+            "name": "damage_speed",
+            "config_name": "damage_speed",
+            "seed": 2,
+            "pretrained_path": "results/ppo_damageant_v0_1783164085_seed2_replicate_damage_canonical_damage_upright/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783164592_seed2_replicate_damage_canonical_damage_speed",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783164592_seed2_replicate_damage_canonical_damage_speed/best_model/best_model"
+          },
+          {
+            "name": "damage_gait",
+            "config_name": "damage_gait",
+            "seed": 2,
+            "pretrained_path": "results/ppo_damageant_v0_1783164592_seed2_replicate_damage_canonical_damage_speed/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783165386_seed2_replicate_damage_canonical_damage_gait",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783165386_seed2_replicate_damage_canonical_damage_gait/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "damage_crossleg",
+      "seed": 0,
+      "final_run_dir": "results/ppo_damageant_v0_1783295334_seed0_replicate_damage_crossleg_crossleg_gait",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 1050000,
+        "mean_reward": 981.5059317333332,
+        "std_reward": 1387.8877945887687,
+        "n_eval_episodes": 15
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783294312_completion_crossleg.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_damageant_v0_1783295334_seed0_replicate_damage_crossleg_crossleg_gait",
+        "stages": [
+          {
+            "name": "crossleg_upright",
+            "config_name": "damage_crossleg_upright",
+            "seed": 0,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783294312_seed0_replicate_damage_crossleg_crossleg_upright",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783294312_seed0_replicate_damage_crossleg_crossleg_upright/best_model/best_model"
+          },
+          {
+            "name": "crossleg_speed",
+            "config_name": "damage_crossleg_speed",
+            "seed": 0,
+            "pretrained_path": "results/ppo_damageant_v0_1783294312_seed0_replicate_damage_crossleg_crossleg_upright/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783294683_seed0_replicate_damage_crossleg_crossleg_speed",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783294683_seed0_replicate_damage_crossleg_crossleg_speed/best_model/best_model"
+          },
+          {
+            "name": "crossleg_gait",
+            "config_name": "damage_crossleg_gait",
+            "seed": 0,
+            "pretrained_path": "results/ppo_damageant_v0_1783294683_seed0_replicate_damage_crossleg_crossleg_speed/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783295334_seed0_replicate_damage_crossleg_crossleg_gait",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783295334_seed0_replicate_damage_crossleg_crossleg_gait/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "damage_crossleg",
+      "seed": 1,
+      "final_run_dir": "results/ppo_damageant_v0_1783296345_seed1_replicate_damage_crossleg_crossleg_gait",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 1500000,
+        "mean_reward": 648.9518313333334,
+        "std_reward": 1070.1807722549827,
+        "n_eval_episodes": 15
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783294312_completion_crossleg.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_damageant_v0_1783296345_seed1_replicate_damage_crossleg_crossleg_gait",
+        "stages": [
+          {
+            "name": "crossleg_upright",
+            "config_name": "damage_crossleg_upright",
+            "seed": 1,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783295580_seed1_replicate_damage_crossleg_crossleg_upright",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783295580_seed1_replicate_damage_crossleg_crossleg_upright/best_model/best_model"
+          },
+          {
+            "name": "crossleg_speed",
+            "config_name": "damage_crossleg_speed",
+            "seed": 1,
+            "pretrained_path": "results/ppo_damageant_v0_1783295580_seed1_replicate_damage_crossleg_crossleg_upright/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783295997_seed1_replicate_damage_crossleg_crossleg_speed",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783295997_seed1_replicate_damage_crossleg_crossleg_speed/best_model/best_model"
+          },
+          {
+            "name": "crossleg_gait",
+            "config_name": "damage_crossleg_gait",
+            "seed": 1,
+            "pretrained_path": "results/ppo_damageant_v0_1783295997_seed1_replicate_damage_crossleg_crossleg_speed/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783296345_seed1_replicate_damage_crossleg_crossleg_gait",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783296345_seed1_replicate_damage_crossleg_crossleg_gait/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "damage_crossleg",
+      "seed": 2,
+      "final_run_dir": "results/ppo_damageant_v0_1783298003_seed2_replicate_damage_crossleg_crossleg_gait",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 1000000,
+        "mean_reward": 1256.9391501999999,
+        "std_reward": 1144.23730334907,
+        "n_eval_episodes": 15
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783294312_completion_crossleg.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_damageant_v0_1783298003_seed2_replicate_damage_crossleg_crossleg_gait",
+        "stages": [
+          {
+            "name": "crossleg_upright",
+            "config_name": "damage_crossleg_upright",
+            "seed": 2,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783296695_seed2_replicate_damage_crossleg_crossleg_upright",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783296695_seed2_replicate_damage_crossleg_crossleg_upright/best_model/best_model"
+          },
+          {
+            "name": "crossleg_speed",
+            "config_name": "damage_crossleg_speed",
+            "seed": 2,
+            "pretrained_path": "results/ppo_damageant_v0_1783296695_seed2_replicate_damage_crossleg_crossleg_upright/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783297301_seed2_replicate_damage_crossleg_crossleg_speed",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783297301_seed2_replicate_damage_crossleg_crossleg_speed/best_model/best_model"
+          },
+          {
+            "name": "crossleg_gait",
+            "config_name": "damage_crossleg_gait",
+            "seed": 2,
+            "pretrained_path": "results/ppo_damageant_v0_1783297301_seed2_replicate_damage_crossleg_crossleg_speed/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_damageant_v0_1783298003_seed2_replicate_damage_crossleg_crossleg_gait",
+            "chained_model_prefix": "results/ppo_damageant_v0_1783298003_seed2_replicate_damage_crossleg_crossleg_gait/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "terrain_canonical",
+      "seed": 0,
+      "final_run_dir": "results/ppo_terrainant_v0_1783236040_seed0_replicate_terrain_canonical_terrain_balanced",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 3000000,
+        "mean_reward": 501.98741959999995,
+        "std_reward": 244.33623746138883,
+        "n_eval_episodes": 10
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783228446_overnight_terrain_seed0.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_terrainant_v0_1783236040_seed0_replicate_terrain_canonical_terrain_balanced",
+        "stages": [
+          {
+            "name": "terrain_finetune",
+            "config_name": "terrain_finetune",
+            "seed": 0,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_terrainant_v0_1783228446_seed0_replicate_terrain_canonical_terrain_finetune",
+            "chained_model_prefix": "results/ppo_terrainant_v0_1783228446_seed0_replicate_terrain_canonical_terrain_finetune/best_model/best_model"
+          },
+          {
+            "name": "terrain_boost",
+            "config_name": "terrain_boost",
+            "seed": 0,
+            "pretrained_path": "results/ppo_terrainant_v0_1783228446_seed0_replicate_terrain_canonical_terrain_finetune/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_terrainant_v0_1783233412_seed0_replicate_terrain_canonical_terrain_boost",
+            "chained_model_prefix": "results/ppo_terrainant_v0_1783233412_seed0_replicate_terrain_canonical_terrain_boost/best_model/best_model"
+          },
+          {
+            "name": "terrain_balanced",
+            "config_name": "terrain_balanced",
+            "seed": 0,
+            "pretrained_path": "results/ppo_terrainant_v0_1783233412_seed0_replicate_terrain_canonical_terrain_boost/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_terrainant_v0_1783236040_seed0_replicate_terrain_canonical_terrain_balanced",
+            "chained_model_prefix": "results/ppo_terrainant_v0_1783236040_seed0_replicate_terrain_canonical_terrain_balanced/best_model/best_model"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "terrain_canonical",
+      "seed": 1,
+      "final_run_dir": "results/ppo_terrainant_v0_1783145145_seed1_resume_from_tracked_seed1_balanced",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 3000000,
+        "mean_reward": 397.01239449999997,
+        "std_reward": 15.922691385545972,
+        "n_eval_episodes": 10
+      }
+    },
+    {
+      "profile": "terrain_canonical",
+      "seed": 2,
+      "final_run_dir": "results/ppo_terrainant_v0_1783157709_seed2_replicate_terrain_canonical_terrain_balanced",
+      "status": "completed",
+      "final_eval": {
+        "timesteps": 3000000,
+        "mean_reward": 384.97420309999995,
+        "std_reward": 30.043888613982137,
+        "n_eval_episodes": 10
+      },
+      "manifest": {
+        "manifest_path": "results/replications/replication_1783150122_overnight_seed2.json",
+        "status": "completed",
+        "final_run_dir": "results/ppo_terrainant_v0_1783157709_seed2_replicate_terrain_canonical_terrain_balanced",
+        "stages": [
+          {
+            "name": "terrain_finetune",
+            "config_name": "terrain_finetune",
+            "seed": 2,
+            "pretrained_path": "checkpoints/flat/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_terrainant_v0_1783150122_seed2_replicate_terrain_canonical_terrain_finetune",
+            "chained_model_prefix": "results/ppo_terrainant_v0_1783150122_seed2_replicate_terrain_canonical_terrain_finetune/best_model/best_model"
+          },
+          {
+            "name": "terrain_boost",
+            "config_name": "terrain_boost",
+            "seed": 2,
+            "pretrained_path": "results/ppo_terrainant_v0_1783150122_seed2_replicate_terrain_canonical_terrain_finetune/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_terrainant_v0_1783155087_seed2_replicate_terrain_canonical_terrain_boost",
+            "chained_model_prefix": "results/ppo_terrainant_v0_1783155087_seed2_replicate_terrain_canonical_terrain_boost/best_model/best_model"
+          },
+          {
+            "name": "terrain_balanced",
+            "config_name": "terrain_balanced",
+            "seed": 2,
+            "pretrained_path": "results/ppo_terrainant_v0_1783155087_seed2_replicate_terrain_canonical_terrain_boost/best_model/best_model",
+            "status": "completed",
+            "run_dir": "results/ppo_terrainant_v0_1783157709_seed2_replicate_terrain_canonical_terrain_balanced",
+            "chained_model_prefix": "results/ppo_terrainant_v0_1783157709_seed2_replicate_terrain_canonical_terrain_balanced/best_model/best_model"
+          }
+        ]
+      }
+    }
+  ],
+  "aggregate": {
+    "terrain_canonical": {
+      "n_seeds": 3,
+      "mean_final_eval_reward": 427.99133906666657,
+      "std_final_eval_reward": 52.5534297248519
+    },
+    "damage_canonical": {
+      "n_seeds": 3,
+      "mean_final_eval_reward": 2724.463098511111,
+      "std_final_eval_reward": 408.7205013407388
+    },
+    "damage_crossleg": {
+      "n_seeds": 3,
+      "mean_final_eval_reward": 962.4656377555556,
+      "std_final_eval_reward": 248.5746629240928
+    }
+  },
+  "notes": [
+    "Terrain seed 1 uses the resumed tracked handoff run.",
+    "Entries are discovered from replication manifests with KNOWN_FINAL_RUNS fallbacks.",
+    "Terrain canonical seeds present locally: [0, 1, 2].",
+    "Cross-leg damage replications are included when manifests exist under results/replications/."
+  ]
+}

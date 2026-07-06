@@ -19,194 +19,194 @@
     "episodes": [
       {
         "seed": 0,
-        "reward": 516.5834903646894,
-        "steps": 774,
-        "forward_distance": 5.331749770070165,
-        "mean_forward_velocity": 0.13777131188811795,
-        "fell": true
+        "reward": 557.167498754162,
+        "steps": 1000,
+        "forward_distance": 1.8113632179229622,
+        "mean_forward_velocity": 0.036227264358459244,
+        "fell": false
       },
       {
         "seed": 1,
-        "reward": 518.6206537194304,
+        "reward": 501.4775355503324,
         "steps": 1000,
-        "forward_distance": 2.9176812136979895,
-        "mean_forward_velocity": 0.05835362427395979,
+        "forward_distance": 0.982545146814059,
+        "mean_forward_velocity": 0.01965090293628118,
         "fell": false
       },
       {
         "seed": 2,
-        "reward": 442.9627906010036,
-        "steps": 662,
-        "forward_distance": 4.714753631045613,
-        "mean_forward_velocity": 0.14243968673853816,
+        "reward": 561.5627917172462,
+        "steps": 842,
+        "forward_distance": 5.991136724653305,
+        "mean_forward_velocity": 0.14230728562121864,
         "fell": true
       },
       {
         "seed": 3,
-        "reward": 296.5636121323218,
-        "steps": 252,
-        "forward_distance": 7.3322864160042025,
-        "mean_forward_velocity": 0.5819274933336668,
+        "reward": 299.3652612649861,
+        "steps": 256,
+        "forward_distance": 7.304044063260125,
+        "mean_forward_velocity": 0.5706284424421972,
         "fell": true
       },
       {
         "seed": 4,
-        "reward": 539.6658389199526,
+        "reward": 511.9005033879764,
         "steps": 1000,
-        "forward_distance": 4.158125257403875,
-        "mean_forward_velocity": 0.0831625051480775,
+        "forward_distance": 2.3584387736889734,
+        "mean_forward_velocity": 0.04716877547377947,
         "fell": false
       },
       {
         "seed": 5,
-        "reward": 585.0054097632017,
+        "reward": 568.4800834595873,
         "steps": 1000,
-        "forward_distance": 2.562271631377475,
-        "mean_forward_velocity": 0.051245432627549506,
+        "forward_distance": 3.3530569121391256,
+        "mean_forward_velocity": 0.06706113824278251,
         "fell": false
       },
       {
         "seed": 6,
-        "reward": 315.6648492246866,
-        "steps": 288,
-        "forward_distance": 7.2911915018168605,
-        "mean_forward_velocity": 0.5063327431817264,
+        "reward": 368.6282360338928,
+        "steps": 381,
+        "forward_distance": 7.239697965464419,
+        "mean_forward_velocity": 0.3800366386070561,
         "fell": true
       },
       {
         "seed": 7,
-        "reward": 357.933690891001,
+        "reward": 390.38287850695264,
         "steps": 1000,
-        "forward_distance": -0.5943806483398381,
-        "mean_forward_velocity": -0.011887612966796761,
+        "forward_distance": -0.18600210032020884,
+        "mean_forward_velocity": -0.003720042006404177,
         "fell": false
       },
       {
         "seed": 8,
-        "reward": 388.618629696525,
+        "reward": 333.2917304793829,
         "steps": 1000,
-        "forward_distance": -2.6044906726861488,
-        "mean_forward_velocity": -0.052089813453722975,
+        "forward_distance": -4.079264560883523,
+        "mean_forward_velocity": -0.08158529121767046,
         "fell": false
       },
       {
         "seed": 9,
-        "reward": 276.1866310066516,
-        "steps": 216,
-        "forward_distance": 7.306787078177698,
-        "mean_forward_velocity": 0.6765543590905275,
+        "reward": 296.0830281821764,
+        "steps": 251,
+        "forward_distance": 7.278722008062991,
+        "mean_forward_velocity": 0.5799778492480471,
         "fell": true
       }
     ],
     "summary": {
       "n_episodes": 10,
-      "mean_reward": 423.7805596319464,
-      "std_reward": 106.12593152211782,
-      "mean_steps": 719.2,
-      "std_steps": 325.2595271471691,
-      "mean_forward_distance": 3.841597517856789,
-      "std_forward_distance": 3.2077335110884038,
-      "mean_forward_velocity": 0.21738097298616438,
-      "std_forward_velocity": 0.25204469559874676,
-      "fall_rate": 0.5
+      "mean_reward": 438.83395473366954,
+      "std_reward": 106.48056481188817,
+      "mean_steps": 773.0,
+      "std_steps": 317.39124121500265,
+      "mean_forward_distance": 3.205373815080223,
+      "std_forward_distance": 3.6002533050659804,
+      "mean_forward_velocity": 0.17577529637057468,
+      "std_forward_velocity": 0.2308227561988241,
+      "fall_rate": 0.4
     }
   },
   "terrain": {
     "episodes": [
       {
         "seed": 0,
-        "reward": 1004.2243989883347,
+        "reward": 986.1189072538873,
         "steps": 1000,
-        "forward_distance": 5.81771012468268,
-        "mean_forward_velocity": 0.11635420249365361,
+        "forward_distance": 5.209440394703362,
+        "mean_forward_velocity": 0.10418880789406725,
         "fell": false
       },
       {
         "seed": 1,
-        "reward": 916.6802199924258,
+        "reward": 904.556557062466,
         "steps": 1000,
-        "forward_distance": 2.086599174687897,
-        "mean_forward_velocity": 0.041731983493757945,
+        "forward_distance": 1.6103693527691854,
+        "mean_forward_velocity": 0.03220738705538371,
         "fell": false
       },
       {
         "seed": 2,
-        "reward": 877.925890232816,
+        "reward": 898.2950374213384,
         "steps": 1000,
-        "forward_distance": -0.04021136400953525,
-        "mean_forward_velocity": -0.000804227280190705,
+        "forward_distance": 1.3525709216425748,
+        "mean_forward_velocity": 0.027051418432851495,
         "fell": false
       },
       {
         "seed": 3,
-        "reward": 572.3125108106682,
-        "steps": 476,
-        "forward_distance": 7.288224542419829,
-        "mean_forward_velocity": 0.306227921950413,
+        "reward": 488.62488230190144,
+        "steps": 383,
+        "forward_distance": 7.278301140060446,
+        "mean_forward_velocity": 0.380067944650676,
         "fell": true
       },
       {
         "seed": 4,
-        "reward": 963.7730151863216,
+        "reward": 947.5051565457807,
         "steps": 1000,
-        "forward_distance": 3.9620081489958214,
-        "mean_forward_velocity": 0.07924016297991643,
+        "forward_distance": 3.107888455086866,
+        "mean_forward_velocity": 0.06215776910173732,
         "fell": false
       },
       {
         "seed": 5,
-        "reward": 873.6012327933854,
+        "reward": 904.0988772938413,
         "steps": 1000,
-        "forward_distance": 0.2140723267824638,
-        "mean_forward_velocity": 0.004281446535649276,
+        "forward_distance": 1.382392898115048,
+        "mean_forward_velocity": 0.02764785796230096,
         "fell": false
       },
       {
         "seed": 6,
-        "reward": 977.629863424098,
+        "reward": 992.9443243513222,
         "steps": 1000,
-        "forward_distance": 4.134090496377904,
-        "mean_forward_velocity": 0.08268180992755808,
+        "forward_distance": 4.96505353659719,
+        "mean_forward_velocity": 0.0993010707319438,
         "fell": false
       },
       {
         "seed": 7,
-        "reward": 758.5956446986008,
-        "steps": 856,
-        "forward_distance": 1.582390800143888,
-        "mean_forward_velocity": 0.03697174766691327,
+        "reward": 778.4402272202738,
+        "steps": 887,
+        "forward_distance": 1.219363669978948,
+        "mean_forward_velocity": 0.02749410755307662,
         "fell": true
       },
       {
         "seed": 8,
-        "reward": 961.8647847809173,
-        "steps": 924,
-        "forward_distance": 7.23473366230691,
-        "mean_forward_velocity": 0.15659596671659978,
+        "reward": 814.4601452968966,
+        "steps": 752,
+        "forward_distance": 7.299144463556248,
+        "mean_forward_velocity": 0.19412618254138955,
         "fell": true
       },
       {
         "seed": 9,
-        "reward": 1026.386036081063,
+        "reward": 975.9317940952931,
         "steps": 1000,
-        "forward_distance": 6.600974658326573,
-        "mean_forward_velocity": 0.13201949316653144,
+        "forward_distance": 4.382410773789815,
+        "mean_forward_velocity": 0.08764821547579629,
         "fell": false
       }
     ],
     "summary": {
       "n_episodes": 10,
-      "mean_reward": 893.299359698863,
-      "std_reward": 130.05556030172275,
-      "mean_steps": 925.6,
-      "std_steps": 156.7591783596737,
-      "mean_forward_distance": 3.8880592570714425,
-      "std_forward_distance": 2.6721091163160278,
-      "mean_forward_velocity": 0.09553005076508021,
-      "std_forward_velocity": 0.0861673425700678,
+      "mean_reward": 869.0975908843,
+      "std_reward": 143.48926943987652,
+      "mean_steps": 902.2,
+      "std_steps": 189.55569102509162,
+      "mean_forward_distance": 3.780693560629968,
+      "std_forward_distance": 2.2757384628500117,
+      "mean_forward_velocity": 0.1041890761399223,
+      "std_forward_velocity": 0.10446732251047647,
       "fall_rate": 0.3
     }
   },
-  "terrain_reward_retention_pct": 210.79290670499228,
-  "terrain_velocity_retention_pct": 43.945911849037685
+  "terrain_reward_retention_pct": 198.04702473667052,
+  "terrain_velocity_retention_pct": 59.27401534301374
 }

@@ -1,5 +1,5 @@
-# Second-stage fine-tune: flat-ground expert → current heightfield at moderate difficulty.
-# Lower difficulty keeps learning stable; 6M steps for robust locomotion.
+# Second-stage fine-tune: flat-ground expert -> current heightfield at moderate difficulty.
+# Use the committed flat checkpoint as the reproducible parent instead of a historical run dir.
 
 config = {
     "env_id": "TerrainAnt-v0",
@@ -18,5 +18,5 @@ config = {
     "max_grad_norm": 0.5,
     "seed": 42,
     "difficulty": 0.35,
-    "pretrained_path": "results/ppo_ant_v5_1782846694/best_model/best_model",
+    "pretrained_path": "checkpoints/flat/best_model/best_model",
 }

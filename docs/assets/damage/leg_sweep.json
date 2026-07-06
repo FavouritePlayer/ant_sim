@@ -1,0 +1,174 @@
+{
+  "created_at": "2026-07-06T00:37:29Z",
+  "flat_run": "checkpoints/flat",
+  "damage_run": "checkpoints/damage",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "max_steps": 1000,
+  "legs": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "by_leg": {
+    "0": {
+      "leg_id": 0,
+      "leg_label": "back right",
+      "out_dir": "docs/assets/damage/leg_0",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 146.49800105662797,
+        "std_reward": 75.79678161556524,
+        "mean_steps": 66.5,
+        "std_steps": 24.01353784847206,
+        "mean_forward_distance": 0.6849454555519602,
+        "std_forward_distance": 0.7718007604509992,
+        "mean_forward_velocity": 0.1998081211860755,
+        "std_forward_velocity": 0.25891539670990377,
+        "fall_rate": 1.0
+      },
+      "damage_summary": {
+        "n_episodes": 10,
+        "mean_reward": 50.33433312335486,
+        "std_reward": 13.79664025547022,
+        "mean_steps": 18.6,
+        "std_steps": 5.332916650389353,
+        "mean_forward_distance": 0.28942837617460154,
+        "std_forward_distance": 0.27712942056712947,
+        "mean_forward_velocity": 0.3099296461763665,
+        "std_forward_velocity": 0.2546236285943639,
+        "fall_rate": 1.0
+      },
+      "metrics": {
+        "velocity_retention_pct": 155.113638192783,
+        "velocity_gain_mps": 0.11012152499029099,
+        "reward_retention_pct": 34.35837537735304,
+        "reward_gain": -96.1636679332731,
+        "fall_rate_reduction_pct": 0.0,
+        "episode_length_gain_steps": -47.9
+      }
+    },
+    "1": {
+      "leg_id": 1,
+      "leg_label": "front right",
+      "out_dir": "docs/assets/damage/leg_1",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 72.01112277978099,
+        "std_reward": 119.97106739315751,
+        "mean_steps": 31.4,
+        "std_steps": 51.93110821078248,
+        "mean_forward_distance": 0.04184145970836071,
+        "std_forward_distance": 0.6393881318050507,
+        "mean_forward_velocity": -0.19893815345450042,
+        "std_forward_velocity": 0.23651123972384813,
+        "fall_rate": 1.0
+      },
+      "damage_summary": {
+        "n_episodes": 10,
+        "mean_reward": 1449.2622453633714,
+        "std_reward": 923.9988882840296,
+        "mean_steps": 636.2,
+        "std_steps": 397.2313683484727,
+        "mean_forward_distance": 7.567484282964353,
+        "std_forward_distance": 4.429894653319776,
+        "mean_forward_velocity": 0.31403946010453204,
+        "std_forward_velocity": 0.1751308772903307,
+        "fall_rate": 0.5
+      },
+      "metrics": {
+        "velocity_retention_pct": null,
+        "velocity_gain_mps": 0.5129776135590325,
+        "reward_retention_pct": 2012.553324290466,
+        "reward_gain": 1377.2511225835904,
+        "fall_rate_reduction_pct": 50.0,
+        "episode_length_gain_steps": 604.8000000000001
+      }
+    },
+    "2": {
+      "leg_id": 2,
+      "leg_label": "front left",
+      "out_dir": "docs/assets/damage/leg_2",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 85.4386436250307,
+        "std_reward": 40.89501706451451,
+        "mean_steps": 30.0,
+        "std_steps": 13.92838827718412,
+        "mean_forward_distance": 1.2710853220782172,
+        "std_forward_distance": 0.8354053154981756,
+        "mean_forward_velocity": 0.886092778628947,
+        "std_forward_velocity": 0.48674022916082244,
+        "fall_rate": 1.0
+      },
+      "damage_summary": {
+        "n_episodes": 10,
+        "mean_reward": 53.588950688925664,
+        "std_reward": 15.014149454127518,
+        "mean_steps": 18.5,
+        "std_steps": 4.6097722286464435,
+        "mean_forward_distance": 0.7196805435426801,
+        "std_forward_distance": 0.3226933799179871,
+        "mean_forward_velocity": 0.7866202711623398,
+        "std_forward_velocity": 0.26349544176857487,
+        "fall_rate": 1.0
+      },
+      "metrics": {
+        "velocity_retention_pct": 88.77403022959727,
+        "velocity_gain_mps": -0.09947250746660719,
+        "reward_retention_pct": 62.72214587595099,
+        "reward_gain": -31.849692936105043,
+        "fall_rate_reduction_pct": 0.0,
+        "episode_length_gain_steps": -11.5
+      }
+    },
+    "3": {
+      "leg_id": 3,
+      "leg_label": "back left",
+      "out_dir": "docs/assets/damage/leg_3",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 53.91705884267152,
+        "std_reward": 42.888585495223936,
+        "mean_steps": 28.2,
+        "std_steps": 20.375475454575287,
+        "mean_forward_distance": 0.7513903714690783,
+        "std_forward_distance": 0.6229906066841309,
+        "mean_forward_velocity": 0.5757446814759042,
+        "std_forward_velocity": 0.30715299267273044,
+        "fall_rate": 1.0
+      },
+      "damage_summary": {
+        "n_episodes": 10,
+        "mean_reward": 69.69018164170328,
+        "std_reward": 37.63704638962928,
+        "mean_steps": 36.7,
+        "std_steps": 15.530936868070773,
+        "mean_forward_distance": 0.7291926928072404,
+        "std_forward_distance": 0.6081684562225077,
+        "mean_forward_velocity": 0.35935061487024883,
+        "std_forward_velocity": 0.2439562341743556,
+        "fall_rate": 1.0
+      },
+      "metrics": {
+        "velocity_retention_pct": 62.414925648824806,
+        "velocity_gain_mps": -0.21639406660565536,
+        "reward_retention_pct": 129.2544199138482,
+        "reward_gain": 15.773122799031754,
+        "fall_rate_reduction_pct": 0.0,
+        "episode_length_gain_steps": 8.500000000000004
+      }
+    }
+  }
+}

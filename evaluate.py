@@ -5,12 +5,12 @@ import gymnasium as gym
 import imageio
 from stable_baselines3 import PPO
 
+from render_utils import clear_tracking_state, render_tracking_frame
 from results_utils import load_run_config, resolve_run_dir
 
-# Demo defaults — low camera exaggerates relief; difficulty 0.4 matches comparison eval
+# Demo defaults — difficulty 0.4 matches comparison eval
 DEMO_DIFFICULTY = 0.4
 DEMO_SEED = None  # auto-pick longest full episode
-DEMO_CAMERA = "demo"
 TARGET_FRAMES = 1000  # one full episode (~33 s at 30 fps)
 SEED_SCAN = 64
 
@@ -18,7 +18,6 @@ SEED_SCAN = 64
 def make_eval_env(
     cfg: dict,
     difficulty: float | None = None,
-    camera: str = DEMO_CAMERA,
     width: int = 640,
     height: int = 480,
 ):
@@ -31,7 +30,6 @@ def make_eval_env(
             env_id,
             difficulty=diff,
             render_mode="rgb_array",
-            camera_name=camera,
             width=width,
             height=height,
             terminate_when_unhealthy=True,
@@ -39,7 +37,6 @@ def make_eval_env(
     return gym.make(
         env_id,
         render_mode="rgb_array",
-        camera_name=camera,
         width=width,
         height=height,
     )
@@ -96,7 +93,6 @@ def record(
     fps: int = 30,
     difficulty: float | None = None,
     seed: int | None = DEMO_SEED,
-    camera: str = DEMO_CAMERA,
     target_frames: int | None = TARGET_FRAMES,
     pick_seed: bool = False,
 ):
@@ -116,11 +112,13 @@ def record(
     if is_terrain and target_frames is None:
         target_frames = TARGET_FRAMES
 
-    env = make_eval_env(cfg, difficulty=diff, camera=camera)
+    env = make_eval_env(cfg, difficulty=diff)
     frames = []
+    clear_tracking_state()
 
     for ep in range(n_episodes):
         ep_seed = seed + ep if seed is not None else None
+        clear_tracking_state(env)
         obs, _ = env.reset(seed=ep_seed)
         ep_reward = 0
         ep_steps = 0
@@ -129,7 +127,7 @@ def record(
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, terminated, truncated, _ = env.step(action)
             ep_reward += reward
-            frames.append(env.render())
+            frames.append(render_tracking_frame(env))
             ep_steps += 1
 
             if target_frames is not None and len(frames) >= target_frames:
@@ -146,7 +144,7 @@ def record(
     env.close()
 
     out_path = os.path.join(run_dir, "demo.mp4")
-    imageio.mimwrite(out_path, frames, fps=fps)
+    imageio.mimwrite(out_path, frames, fps=fps, macro_block_size=1)
     print(f"Saved: {out_path}  ({len(frames)} frames, {len(frames)/fps:.1f}s)")
     return out_path
 
@@ -160,7 +158,6 @@ if __name__ == "__main__":
     parser.add_argument("--difficulty", type=float, default=None)
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--pick-seed", action="store_true", help="Scan seeds for best demo")
-    parser.add_argument("--camera", default=DEMO_CAMERA)
     parser.add_argument(
         "--target-frames",
         type=int,
@@ -182,7 +179,6 @@ if __name__ == "__main__":
         fps=args.fps,
         difficulty=args.difficulty,
         seed=args.seed,
-        camera=args.camera,
         target_frames=target_frames,
         pick_seed=args.pick_seed or (args.seed is None and cfg.get("env_id") == "TerrainAnt-v0"),
     )

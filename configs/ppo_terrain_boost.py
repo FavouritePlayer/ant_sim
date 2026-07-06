@@ -1,4 +1,4 @@
-# Boost the stable terrain agent: fine-tune the original terrain checkpoint on the
+# Boost the stable terrain agent: fine-tune from the committed terrain checkpoint on the
 # current heightfield with a stronger forward reward to walk farther without falling.
 
 config = {
@@ -19,5 +19,5 @@ config = {
     "seed": 42,
     "difficulty": 0.35,
     "forward_reward_weight": 1.5,
-    "pretrained_path": "results/ppo_terrainant_v0_1782847297/best_model/best_model",
+    "pretrained_path": "checkpoints/terrain/best_model/best_model",
 }

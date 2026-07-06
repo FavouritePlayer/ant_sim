@@ -34,6 +34,9 @@ CONFIG_MODULES = {
     "damage_holistic_v2": "configs.ppo_damage_holistic_v2",
     "damage_holistic_v3": "configs.ppo_damage_holistic_v3",
     "damage_upright_polish": "configs.ppo_damage_upright_polish",
+    "damage_crossleg_upright": "configs.ppo_damage_crossleg_upright",
+    "damage_crossleg_speed": "configs.ppo_damage_crossleg_speed",
+    "damage_crossleg_gait": "configs.ppo_damage_crossleg_gait",
 }
 
 

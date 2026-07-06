@@ -6,8 +6,8 @@ import os
 from dataclasses import asdict, dataclass
 
 import gymnasium as gym
-import mujoco
 import imageio
+from render_utils import clear_tracking_state, render_tracking_frame
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw
@@ -23,11 +23,6 @@ DEFAULT_DISABLED_LEGS = [1]
 DEFAULT_VIDEO_SEED = 7
 DEFAULT_AMPUTATION_STEP = 120
 DEMO_CAMERA_NAME = "demo"
-_LOOKAT: dict[int, np.ndarray] = {}
-_LOOKAT_BLEND = 0.55
-_DEMO_DISTANCE = 6.5
-_DEMO_AZIMUTH = 90.0
-_DEMO_ELEVATION = -15.0
 
 
 @dataclass
@@ -86,27 +81,7 @@ def _load_model(run_dir: str | None, label: str) -> PPO:
 
 
 def _render_demo(env) -> np.ndarray:
-    """Free camera with smoothed torso lookat — body trackcom drifts off-frame when walking far."""
-    renderer = env.unwrapped.mujoco_renderer
-    viewer = renderer._get_viewer(render_mode="rgb_array")
-    cam = viewer.cam
-    torso_id = env.unwrapped.model.body("torso").id
-    target = env.unwrapped.data.xpos[torso_id].copy()
-
-    key = id(env)
-    prev = _LOOKAT.get(key)
-    if prev is None:
-        _LOOKAT[key] = target.copy()
-    else:
-        _LOOKAT[key] = _LOOKAT_BLEND * target + (1.0 - _LOOKAT_BLEND) * prev
-
-    cam.type = mujoco.mjtCamera.mjCAMERA_FREE
-    cam.fixedcamid = -1
-    cam.lookat[:] = _LOOKAT[key]
-    cam.distance = _DEMO_DISTANCE
-    cam.azimuth = _DEMO_AZIMUTH
-    cam.elevation = _DEMO_ELEVATION
-    return viewer.render(render_mode="rgb_array", camera_id=-1)
+    return render_tracking_frame(env)
 
 
 def _damage_caption(disabled_legs: list[int]) -> str:
@@ -472,7 +447,7 @@ def record_side_by_side(
 
     caption = _damage_caption(disabled_legs)
     frames = []
-    _LOOKAT.clear()
+    clear_tracking_state()
 
     for _ in range(max_steps):
         a_f, _ = flat_model.predict(obs_f, deterministic=True)
@@ -525,7 +500,7 @@ def record_sudden_amputation(
     pre_caption = "4 legs — walking normally"
     post_caption = _damage_caption(amputation_legs)
     frames = []
-    _LOOKAT.clear()
+    clear_tracking_state()
     flat_done = False
     last_flat = None
     amputated = False

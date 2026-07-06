@@ -1,4 +1,6 @@
-# Fine-tune velocity model: less tracking penalty, more forward reward.
+# Follow-up velocity-command terrain recipe: less tracking penalty, more forward reward.
+# `TerrainAnt-v1` adds a commanded-speed observation, so there is no committed v1 parent
+# checkpoint in the repo; pass `--pretrained` explicitly when continuing a prior v1 run.
 
 config = {
     "env_id": "TerrainAnt-v1",
@@ -25,5 +27,4 @@ config = {
     "target_speed_range": [0.2, 0.45],
     "eval_target_speed_range": [0.35, 0.35],
     "early_stop_patience": 10,
-    "pretrained_path": "results/ppo_terrainant_v1_1782967768/best_model/best_model",
 }

@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from stable_baselines3 import PPO
 
+from render_utils import clear_tracking_state, render_tracking_frame
 from results_utils import default_checkpoint
 
 DEFAULT_FLAT_RUN = default_checkpoint("flat") or "checkpoints/flat"
@@ -41,7 +42,6 @@ def make_terrain_env(difficulty: float, render: bool = False):
     if render:
         kwargs.update(
             render_mode="rgb_array",
-            camera_name="demo",
             width=640,
             height=480,
         )
@@ -99,6 +99,22 @@ def summarize(episodes: list[EpisodeMetrics]) -> dict:
     }
 
 
+def _comparison_metrics(flat_summary: dict, terrain_summary: dict) -> dict:
+    flat_vel = float(flat_summary["mean_forward_velocity"])
+    terrain_vel = float(terrain_summary["mean_forward_velocity"])
+
+    velocity_retention_pct = None
+    if flat_vel > 1e-6:
+        velocity_retention_pct = float(100.0 * terrain_vel / flat_vel)
+
+    return {
+        "terrain_reward_retention_pct": float(
+            100.0 * terrain_summary["mean_reward"] / max(flat_summary["mean_reward"], 1e-6)
+        ),
+        "terrain_velocity_retention_pct": velocity_retention_pct,
+    }
+
+
 def compare(
     flat_run: str,
     terrain_run: str,
@@ -130,19 +146,7 @@ def compare(
 
     flat_summary = summarize(flat_eps)
     terrain_summary = summarize(terrain_eps)
-
-    reward_retention = (
-        terrain_summary["mean_reward"] / flat_summary["mean_reward"] * 100
-        if flat_summary["mean_reward"] > 0
-        else float("nan")
-    )
-    velocity_retention = (
-        terrain_summary["mean_forward_velocity"] / flat_summary["mean_forward_velocity"] * 100
-        if flat_summary["mean_forward_velocity"] > 0
-        else float("nan")
-    )
-
-    return {
+    results = {
         "difficulty": difficulty,
         "max_steps": max_steps,
         "seeds": seeds,
@@ -150,9 +154,9 @@ def compare(
         "terrain_run": terrain_run,
         "flat": {"episodes": [asdict(e) for e in flat_eps], "summary": flat_summary},
         "terrain": {"episodes": [asdict(e) for e in terrain_eps], "summary": terrain_summary},
-        "terrain_reward_retention_pct": reward_retention,
-        "terrain_velocity_retention_pct": velocity_retention,
     }
+    results.update(_comparison_metrics(flat_summary, terrain_summary))
+    return results
 
 
 def plot_comparison_summary(results: dict, out_path: str):
@@ -257,18 +261,19 @@ def record_side_by_side(
     flat_done = False
     last_flat_frame = None
     frames = []
+    clear_tracking_state()
 
     for _ in range(max_steps):
         if not flat_done:
             action_f, _ = flat_model.predict(obs_f, deterministic=True)
             obs_f, _, term_f, trunc_f, _ = env_flat.step(action_f)
-            last_flat_frame = env_flat.render()
+            last_flat_frame = render_tracking_frame(env_flat)
             if term_f or trunc_f:
                 flat_done = True
 
         action_t, _ = terrain_model.predict(obs_t, deterministic=True)
         obs_t, _, term_t, trunc_t, _ = env_terrain.step(action_t)
-        frame_t = env_terrain.render()
+        frame_t = render_tracking_frame(env_terrain)
 
         frame_f = last_flat_frame if last_flat_frame is not None else frame_t
         left = _label_frame(frame_f, "Flat-trained (control)")
@@ -282,7 +287,7 @@ def record_side_by_side(
     env_terrain.close()
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-    imageio.mimwrite(out_path, frames, fps=fps)
+    imageio.mimwrite(out_path, frames, fps=fps, macro_block_size=1)
     print(f"Saved video: {out_path}  ({len(frames)} frames, {len(frames)/fps:.1f}s)")
 
 

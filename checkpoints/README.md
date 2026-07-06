@@ -9,9 +9,10 @@ These are the **canonical, committed** checkpoints used by the README metrics an
 
 ## Important provenance note
 
-Some exploratory configs under `configs/` still reference historical parents inside `results/`.
-Those recipes are useful as experiment notes, but they are **not** the clean reproducible
-path for the shipped portfolio artifacts.
+Exploratory configs under `configs/` now anchor to committed checkpoints where possible.
+The main exception is `terrain_velocity_v2`, which has no committed `TerrainAnt-v1`
+parent because the velocity-command variant changes the observation space; resume that
+kind of run with an explicit `--pretrained` override when needed.
 
 If you want the repo's headline results from a fresh clone, use:
 
@@ -30,8 +31,8 @@ If you want to resume interrupted multi-seed training on another machine, check:
 - `terrain/` corresponds to the `terrain_balanced` result described in the README
 - `damage/` corresponds to the staged `damage_upright -> damage_speed -> damage_gait` result
 
-Until the exploratory configs are fully cleaned up, treat this directory as the source of truth
-for benchmarked models.
+Treat this directory as the source of truth for benchmarked models and the default parent
+anchors for reproducible fine-tunes.
 # Committed policy checkpoints
 
 | Directory | Policy | Best eval | Recipe |

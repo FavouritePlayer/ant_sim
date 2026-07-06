@@ -1,0 +1,142 @@
+{
+  "created_at": "2026-07-05T05:08:59Z",
+  "flat_run": "checkpoints/flat",
+  "terrain_run": "checkpoints/terrain",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "max_steps": 1000,
+  "difficulties": [
+    0.2,
+    0.4,
+    0.6,
+    0.8
+  ],
+  "by_difficulty": {
+    "0.2": {
+      "out_dir": "docs/assets/terrain/difficulty_0p2",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 489.290148280658,
+        "std_reward": 75.79328764843856,
+        "mean_steps": 776.1,
+        "std_steps": 216.53242251450473,
+        "mean_forward_distance": 5.004733000148885,
+        "std_forward_distance": 2.460430835094481,
+        "mean_forward_velocity": 0.15697534500760618,
+        "std_forward_velocity": 0.10732557202967391,
+        "fall_rate": 0.6
+      },
+      "terrain_summary": {
+        "n_episodes": 10,
+        "mean_reward": 903.8140520060149,
+        "std_reward": 37.74966421085765,
+        "mean_steps": 944.7,
+        "std_steps": 85.61781356703756,
+        "mean_forward_distance": 3.537271316483712,
+        "std_forward_distance": 2.6804633400391924,
+        "mean_forward_velocity": 0.0806395139742225,
+        "std_forward_velocity": 0.06770623932151074,
+        "fall_rate": 0.3
+      },
+      "terrain_reward_retention_pct": 184.7194461572492,
+      "terrain_velocity_retention_pct": 51.37081493295342
+    },
+    "0.4": {
+      "out_dir": "docs/assets/terrain/difficulty_0p4",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 438.83395473366954,
+        "std_reward": 106.48056481188817,
+        "mean_steps": 773.0,
+        "std_steps": 317.39124121500265,
+        "mean_forward_distance": 3.205373815080223,
+        "std_forward_distance": 3.6002533050659804,
+        "mean_forward_velocity": 0.17577529637057468,
+        "std_forward_velocity": 0.2308227561988241,
+        "fall_rate": 0.4
+      },
+      "terrain_summary": {
+        "n_episodes": 10,
+        "mean_reward": 869.0975908843,
+        "std_reward": 143.48926943987652,
+        "mean_steps": 902.2,
+        "std_steps": 189.55569102509162,
+        "mean_forward_distance": 3.780693560629968,
+        "std_forward_distance": 2.2757384628500117,
+        "mean_forward_velocity": 0.1041890761399223,
+        "std_forward_velocity": 0.10446732251047647,
+        "fall_rate": 0.3
+      },
+      "terrain_reward_retention_pct": 198.04702473667052,
+      "terrain_velocity_retention_pct": 59.27401534301374
+    },
+    "0.6": {
+      "out_dir": "docs/assets/terrain/difficulty_0p6",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 416.66334200935825,
+        "std_reward": 138.77178300976064,
+        "mean_steps": 688.3,
+        "std_steps": 357.0445490411526,
+        "mean_forward_distance": 4.4872311483948,
+        "std_forward_distance": 3.2581480890262284,
+        "mean_forward_velocity": 0.28431536616482,
+        "std_forward_velocity": 0.32302660836066793,
+        "fall_rate": 0.5
+      },
+      "terrain_summary": {
+        "n_episodes": 10,
+        "mean_reward": 844.8699510456861,
+        "std_reward": 187.3141291526821,
+        "mean_steps": 879.4,
+        "std_steps": 236.1343685277516,
+        "mean_forward_distance": 3.756109943222088,
+        "std_forward_distance": 2.8079193049381415,
+        "mean_forward_velocity": 0.13927611727597328,
+        "std_forward_velocity": 0.20913413960928542,
+        "fall_rate": 0.4
+      },
+      "terrain_reward_retention_pct": 202.77040619203555,
+      "terrain_velocity_retention_pct": 48.98648959945195
+    },
+    "0.8": {
+      "out_dir": "docs/assets/terrain/difficulty_0p8",
+      "flat_summary": {
+        "n_episodes": 10,
+        "mean_reward": 366.64036970675954,
+        "std_reward": 140.84707835197185,
+        "mean_steps": 600.8,
+        "std_steps": 387.338559918839,
+        "mean_forward_distance": 3.806239372483458,
+        "std_forward_distance": 4.295460844322359,
+        "mean_forward_velocity": 0.44065213151152305,
+        "std_forward_velocity": 0.535366929809837,
+        "fall_rate": 0.6
+      },
+      "terrain_summary": {
+        "n_episodes": 10,
+        "mean_reward": 830.283709154299,
+        "std_reward": 178.69860626847114,
+        "mean_steps": 841.6,
+        "std_steps": 235.1226063142377,
+        "mean_forward_distance": 4.62234617885963,
+        "std_forward_distance": 2.6974898032776395,
+        "mean_forward_velocity": 0.15329819379839768,
+        "std_forward_velocity": 0.1626056877875736,
+        "fall_rate": 0.5
+      },
+      "terrain_reward_retention_pct": 226.45725287108,
+      "terrain_velocity_retention_pct": 34.78893731264952
+    }
+  }
+}
