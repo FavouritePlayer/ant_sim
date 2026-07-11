@@ -5,8 +5,6 @@ Trained and evaluated quadruped policies with **Proximal Policy Optimization (PP
 **Stack:** Python · PyTorch · Gymnasium · MuJoCo · Stable-Baselines3  
 **Repo:** [github.com/FavouritePlayer/ant_sim](https://github.com/FavouritePlayer/ant_sim)
 
----
-
 ## Results at a glance
 
 All primary benchmarks use **10 matched random seeds**, **1000-step episodes**, and **deterministic** policy actions unless noted.
@@ -20,7 +18,11 @@ All primary benchmarks use **10 matched random seeds**, **1000-step episodes**, 
 | Mean episode length | 719 steps | **926 steps** |
 | Mean forward velocity | 0.22 m/s | 0.10 m/s |
 
-**Conclusion:** Training on randomized heightfields improves survival on unseen rough terrain. The terrain policy trades speed for stability.
+Training on randomized heightfields improves survival on unseen rough terrain. The terrain policy trades speed for stability.
+
+```bash
+python compare_policies.py --difficulty 0.4 --seeds 0 1 2 3 4 5 6 7 8 9
+```
 
 ### Leg damage — specialist policy (leg 1 / front-right amputated at reset)
 
@@ -31,7 +33,11 @@ All primary benchmarks use **10 matched random seeds**, **1000-step episodes**, 
 | Fall rate | 100% | **20%** |
 | Mean forward velocity | −0.19 m/s | **0.31 m/s** |
 
-**Conclusion:** A policy trained with leg 1 always amputated learns a stable tripod gait on that leg. It does **not** transfer to other legs (100% fall on legs 0, 2, 3).
+A policy trained with leg 1 always amputated learns a stable tripod gait on that leg. It does **not** transfer to other legs (100% fall on legs 0, 2, 3).
+
+```bash
+python compare_damage.py --disabled-legs 1 --seeds 0 1 2 3 4 5 6 7 8 9
+```
 
 ### Leg damage — sudden amputation (leg 1 removed at step 120)
 
@@ -41,7 +47,7 @@ All primary benchmarks use **10 matched random seeds**, **1000-step episodes**, 
 | Fall rate | 100% | **80%** |
 | Mean episode length | 133 steps | **504 steps** |
 
-**Conclusion:** Mid-episode amputation is harder than fixed amputation. The specialist still beats the flat baseline but recovery is not guaranteed.
+Mid-episode amputation is harder than fixed amputation. The specialist still beats the flat baseline but recovery is not guaranteed.
 
 ### Cross-leg training (random single-leg amputation during training)
 
@@ -52,7 +58,7 @@ All primary benchmarks use **10 matched random seeds**, **1000-step episodes**, 
 | 2 (front left) | 305 ± 255 | 100% | 54 ± 15 | 100% |
 | 3 (back left) | 99 ± 28 | 100% | 70 ± 38 | 100% |
 
-**Conclusion:** No single learned policy solves all legs. Cross-leg training helps leg 0; the leg-1 specialist remains best on leg 1.
+No single learned policy solves all legs. Cross-leg training helps leg 0; the leg-1 specialist remains best on leg 1.
 
 ### Compound router (pick specialist or cross-leg by amputated leg)
 
@@ -67,7 +73,11 @@ Macro eval over **4 legs × 10 seeds = 40 episodes** (fixed amputation at reset)
 
 Routing table: leg **0** → cross-leg, leg **1** → specialist, legs **2–3** → cross-leg.
 
-**Conclusion:** Compound routing is the best overall damage strategy in this repo — an engineering switchboard, not a new unified policy. Legs 2 and 3 remain unsolved (100% fall for all approaches).
+Compound routing is the best overall damage strategy in this repo — an engineering switchboard, not a new unified policy. Legs 2 and 3 remain unsolved (100% fall for all approaches).
+
+```bash
+python compound_damage.py
+```
 
 ### Multi-seed training replication
 
@@ -78,23 +88,17 @@ Routing table: leg **0** → cross-leg, leg **1** → specialist, legs **2–3**
 
 Details: [`docs/assets/replications/SUMMARY.md`](docs/assets/replications/SUMMARY.md)
 
----
+```bash
+python replicate_training.py --profiles terrain_canonical damage_canonical --seeds 0 1 2
+```
 
-## Main conclusions (for resume / portfolio)
+## Main conclusions
 
 1. **Terrain RL generalizes:** terrain-trained policy achieves **~2.1×** the reward and **40% lower fall rate** vs flat baseline on unseen hills (difficulty 0.4).
 2. **Damage robustness is achievable but leg-specific:** specialist policy reaches **~49×** flat reward with **20% fall** on the trained leg; **0%** transfer to other legs.
 3. **Cross-leg training is partial:** fixes back-right (leg 0) but fails on the specialist's leg-1 niche.
 4. **Compound routing beats any single policy:** **836 vs 497** mean macro reward and **78% vs 90%** fall vs cross-leg alone by switching checkpoints per amputated leg.
 5. **Sudden amputation is an open problem:** even the best policies fall **80%** of the time when the leg is removed mid-episode.
-
----
-
-## Resume bullet (copy-ready)
-
-> Trained terrain-adapted and damage-robust MuJoCo quadruped policies with PPO. On unseen heightfield terrain: **893 ± 130 vs 424 ± 106** reward, **30% vs 50%** fall rate. Under front-right leg amputation: **2148 ± 749 vs 44 ± 37** reward, **20% vs 100%** fall rate, **0.31 m/s** tripod locomotion. Built multi-seed replication, extended eval sweeps, and a compound leg-routing controller (**836 ± 909** macro reward, **78%** fall vs **90%** for cross-leg-only).
-
----
 
 ## Demo videos
 
@@ -106,8 +110,6 @@ Details: [`docs/assets/replications/SUMMARY.md`](docs/assets/replications/SUMMAR
 | Compound: cross-leg vs flat→specialist switch | [compound_comparison_demo.mp4](docs/assets/damage/compound_comparison_demo.mp4) |
 
 Regenerate: `python generate_policy_videos.py`
-
----
 
 ## Repository layout
 
@@ -122,8 +124,6 @@ Regenerate: `python generate_policy_videos.py`
 | `docs/assets/` | Benchmark JSON, plots, and comparison videos |
 | `tests/` | Regression tests for envs, metrics, and routing |
 
----
-
 ## Quick start
 
 ```bash
@@ -136,13 +136,12 @@ python generate_policy_videos.py
 python -m unittest discover -s tests -v
 ```
 
-Committed checkpoints reproduce all headline numbers without retraining.
-
----
+Committed checkpoints reproduce all headline numbers without retraining. See [checkpoints/README.md](checkpoints/README.md) for lineage.
 
 ## Further reading
 
 - [LEARNING.md](LEARNING.md) — RL concepts, environment design, and experiment methodology
+- [MUJOCO_PROJECT_SCOPE.md](MUJOCO_PROJECT_SCOPE.md) — scope and design decisions
 - [checkpoints/README.md](checkpoints/README.md) — model provenance and training recipes
 
 ## License
